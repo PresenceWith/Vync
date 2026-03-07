@@ -1,8 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Drawnix } from '@drawnix/drawnix';
 import { PlaitElement, PlaitTheme, Viewport } from '@plait/core';
-import type { VyncFile, WsMessage } from '@vync/shared';
+import type { VyncFile, VyncViewport, WsMessage } from '@vync/shared';
 import localforage from 'localforage';
+
+function toPlaitViewport(v: VyncViewport): Viewport {
+  return { zoom: v.zoom, origination: [v.x, v.y] } as Viewport;
+}
+
+function toVyncViewport(v?: Viewport): VyncViewport {
+  const origination = v?.origination as [number, number] | undefined;
+  return {
+    zoom: v?.zoom ?? 1,
+    x: origination?.[0] ?? 0,
+    y: origination?.[1] ?? 0,
+  };
+}
 
 type AppValue = {
   children: PlaitElement[];
@@ -11,6 +24,7 @@ type AppValue = {
 };
 
 const MAIN_BOARD_CONTENT_KEY = 'main_board_content';
+const SYNC_DEBOUNCE_MS = 300;
 
 localforage.config({
   name: 'Drawnix',
@@ -24,6 +38,8 @@ export function App() {
   const [syncMode, setSyncMode] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isRemoteUpdateRef = useRef(false);
 
   // Load initial data: try API first, fall back to localforage
   useEffect(() => {
@@ -34,7 +50,7 @@ export function App() {
           const data = (await res.json()) as VyncFile<PlaitElement>;
           setValue({
             children: data.elements || [],
-            viewport: data.viewport,
+            viewport: toPlaitViewport(data.viewport),
           });
           setSyncMode(true);
           if (!data.elements || data.elements.length === 0) {
@@ -80,9 +96,10 @@ export function App() {
         try {
           const msg = JSON.parse(event.data) as WsMessage<PlaitElement>;
           if (msg.type === 'file-changed' && msg.data) {
+            isRemoteUpdateRef.current = true;
             setValue({
               children: msg.data.elements || [],
-              viewport: msg.data.viewport,
+              viewport: toPlaitViewport(msg.data.viewport),
             });
           }
         } catch (err) {
@@ -115,14 +132,47 @@ export function App() {
     };
   }, [syncMode]);
 
-  const handleChange = useCallback((value: unknown) => {
-    const newValue = value as AppValue;
-    localforage.setItem(MAIN_BOARD_CONTENT_KEY, newValue);
-    setValue(newValue);
-    if (newValue.children && newValue.children.length > 0) {
-      setTutorial(false);
-    }
-  }, []);
+  const handleChange = useCallback(
+    (value: unknown) => {
+      const newValue = value as AppValue;
+      setValue(newValue);
+
+      if (newValue.children && newValue.children.length > 0) {
+        setTutorial(false);
+      }
+
+      // Skip sync for remote updates (from WebSocket)
+      if (isRemoteUpdateRef.current) {
+        isRemoteUpdateRef.current = false;
+        return;
+      }
+
+      if (syncMode) {
+        // Debounced PUT to /api/sync
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = setTimeout(() => {
+          const vyncFile: VyncFile<PlaitElement> = {
+            version: 1,
+            viewport: toVyncViewport(newValue.viewport),
+            elements: newValue.children || [],
+          };
+          fetch('/api/sync', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(vyncFile),
+          }).catch((err) => {
+            console.error('[vync] Failed to sync to server:', err);
+          });
+        }, SYNC_DEBOUNCE_MS);
+      } else {
+        // Fallback: save to localforage when not in sync mode
+        localforage.setItem(MAIN_BOARD_CONTENT_KEY, newValue);
+      }
+    },
+    [syncMode]
+  );
 
   return (
     <Drawnix
