@@ -1,10 +1,10 @@
 import http from 'node:http';
 import path from 'node:path';
-import fs from 'node:fs/promises';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { createFileWatcher } from './file-watcher.js';
 import { createWsServer } from './ws-handler.js';
+import { createSyncService } from './sync-service.js';
 import type { VyncFile } from '../shared/types.js';
 
 const PORT = 3100;
@@ -18,10 +18,10 @@ async function main() {
 
   const resolvedPath = path.resolve(filePath);
 
-  // Verify file exists and is valid JSON
+  // Initialize sync service (validates file exists and is valid JSON)
+  const sync = createSyncService(resolvedPath);
   try {
-    const content = await fs.readFile(resolvedPath, 'utf-8');
-    JSON.parse(content);
+    await sync.init();
   } catch (err: any) {
     if (err.code === 'ENOENT') {
       console.error(`[vync] File not found: ${resolvedPath}`);
@@ -59,8 +59,7 @@ async function main() {
 
   app.get('/api/sync', async (_req, res) => {
     try {
-      const content = await fs.readFile(resolvedPath, 'utf-8');
-      const data = JSON.parse(content);
+      const data = await sync.readFile();
       res.json(data);
     } catch (err) {
       console.error('[vync] Error reading file:', err);
@@ -71,8 +70,11 @@ async function main() {
   app.put('/api/sync', async (req, res) => {
     try {
       const data = req.body as VyncFile;
-      const content = JSON.stringify(data, null, 2);
-      await fs.writeFile(resolvedPath, content, 'utf-8');
+      if (!data || !Array.isArray(data.elements)) {
+        res.status(400).json({ error: 'Invalid VyncFile format' });
+        return;
+      }
+      await sync.writeFile(data);
       res.json({ ok: true });
     } catch (err) {
       console.error('[vync] Error writing file:', err);
@@ -107,12 +109,10 @@ async function main() {
   // --- File watcher ---
 
   const watcher = createFileWatcher(resolvedPath, (content) => {
-    try {
-      const data = JSON.parse(content) as VyncFile;
+    const data = sync.handleFileChange(content);
+    if (data) {
       ws.broadcast({ type: 'file-changed', data });
       console.log('[vync] File changed externally, notified clients');
-    } catch {
-      console.error('[vync] Invalid JSON in changed file, ignoring');
     }
   });
 
