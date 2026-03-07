@@ -7,7 +7,7 @@
 
 ## 현재 상태
 
-**Phase**: 2 완료 → Phase 3 (양방향 동기화 완성) 진행 예정
+**Phase**: 3 완료 → Phase 4 (CLI 도구 + AI 편집 지원) 진행 예정
 
 ---
 
@@ -62,16 +62,16 @@
 **목표**: 안정적인 양방향 동기화를 완성한다.
 **의존**: Phase 2 완료 (2.1~2.5 모두 필수)
 
-- [ ] 3.1 웹 UI onChange → 디바운싱(300ms) → PUT /api/sync → 파일 저장
-- [ ] 3.2 localforage 저장소 → API Route 호출로 교체
-- [ ] 3.3 에코 방지 메커니즘 구현 (content hash)
-  - [ ] 3.3.1 SHA-256 해시 유틸리티 (src/shared/hash.ts)
-  - [ ] 3.3.2 쓰기 시 해시 저장 로직
-  - [ ] 3.3.3 chokidar 감지 시 해시 비교 로직
-  - [ ] 3.3.4 Race condition 처리 (isWriting 플래그, → ARCHITECTURE.md §6.1)
-- [ ] 3.4 원자적 파일 쓰기 (tmp + rename)
-- [ ] 3.5 JSON 유효성 검증 (파싱 실패 시 이전 상태 유지)
-- [ ] 3.6 에러 핸들링 (파일 잠금, 네트워크 오류 등)
+- [x] 3.1 웹 UI onChange → 디바운싱(300ms) → PUT /api/sync → 파일 저장
+- [x] 3.2 localforage 저장소 → API Route 호출로 교체 (syncMode 시 API, 아닐 때 localforage fallback)
+- [x] 3.3 에코 방지 메커니즘 구현 (content hash)
+  - [x] 3.3.1 SHA-256 해시 유틸리티 (src/shared/hash.ts)
+  - [x] 3.3.2 쓰기 시 해시 저장 로직
+  - [x] 3.3.3 chokidar 감지 시 해시 비교 로직
+  - [x] 3.3.4 Race condition 처리 (isWriting 플래그, → ARCHITECTURE.md §6.1)
+- [x] 3.4 원자적 파일 쓰기 (tmp + rename)
+- [x] 3.5 JSON 유효성 검증 (파싱 실패 시 이전 상태 유지)
+- [x] 3.6 에러 핸들링 (PUT 입력 검증, 파일 읽기 fallback, WebSocket 에러 핸들링)
 
 **완료 기준**:
 - 웹 편집 → 파일 자동 저장
@@ -129,11 +129,11 @@
 |--------|------|----------|----------|
 | Drawnix가 초기 프로젝트라 API 불안정 | 높음 | Plait 직접 사용으로 Fallback | Phase 1 |
 | PlaitElement[] JSON이 AI 편집에 복잡 | **평가 완료** | 마인드맵/도형은 용이, ArrowLine 바인딩은 어려움. CLAUDE.md + Schema로 충분히 완화 가능 → D-003 유지 (ARCHITECTURE.md §7) | Phase 1 |
-| 양방향 동기화 시 데이터 손실 | 높음 | 원자적 쓰기 + content hash 검증 | Phase 3 |
+| 양방향 동기화 시 데이터 손실 | **해소** | 원자적 쓰기(tmp+rename) + SHA-256 content hash + isWriting 플래그 + JSON 유효성 검증 + lastValidContent fallback 구현 완료 | Phase 3 |
 | Custom Server에서 HMR과 WS 충돌 | **해소** | Vite HMR은 내부 WS 사용, 동기화 WS는 독립 경로 /ws — 충돌 없음 | Phase 1에서 확인 |
-| 대용량 .vync 파일에서 SHA-256 해싱 지연 | 낮음 | 일반 사용 시 파일 크기 소규모 예상. 병목 시 incremental hash 검토 | Phase 3 |
+| 대용량 .vync 파일에서 SHA-256 해싱 지연 | 낮음 | 일반 사용 시 파일 크기 소규모 예상. 병목 시 incremental hash 검토 | Phase 3 (구현 완료, 성능 문제 미발견) |
 | AI가 잘못된 PlaitElement JSON 생성 | 중간 | JSON Schema 검증 + CLAUDE.md 예시 강화. 실패율 높으면 D-003 재검토 | Phase 4 |
-| chokidar가 빠른 연속 변경 시 이벤트 누락 | 낮음 | 디바운싱으로 완화. 누락 시 polling fallback 검토 | Phase 3 |
+| chokidar가 빠른 연속 변경 시 이벤트 누락 | 낮음 | 디바운싱으로 완화. 누락 시 polling fallback 검토 | Phase 3 (awaitWriteFinish 300ms 설정 완료) |
 
 ---
 

@@ -282,12 +282,10 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │   ├── server/
 │   │   ├── server.ts              # Custom Node Server (HTTP+WS+chokidar+Vite middleware)
 │   │   ├── file-watcher.ts        # chokidar 파일 감시
-│   │   ├── sync-service.ts        # 동기화 로직 (에코 방지)
+│   │   ├── sync-service.ts        # 동기화 로직 (에코 방지 + 원자적 쓰기 + JSON 유효성 검증)
 │   │   └── ws-handler.ts          # WebSocket 메시지 핸들러
 │   └── shared/
 │       ├── types.ts               # .vync 파일 포맷 타입
-│       ├── reader.ts              # 파일 읽기 + 유효성 검증
-│       ├── writer.ts              # 원자적 쓰기 (tmp + rename)
 │       └── hash.ts                # content hash 유틸리티 (SHA-256)
 ├── bin/
 │   └── vync.js                    # CLI 진입점                    [VYNC 추가]
