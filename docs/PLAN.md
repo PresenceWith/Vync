@@ -1,0 +1,148 @@
+# Vync — 구현 계획
+
+> Phase별 작업 목록과 완료 기준. 현재 진행 상태를 추적한다.
+> 설계 근거는 [DECISIONS.md](./DECISIONS.md), 시스템 구조는 [ARCHITECTURE.md](./ARCHITECTURE.md) 참조.
+
+---
+
+## 현재 상태
+
+**Phase**: 1 완료 → Phase 2 (파일 동기화 레이어) 진행 예정
+
+---
+
+## Phase 1: Drawnix 포크 + 데이터 모델 파악
+
+**목표**: Drawnix를 로컬에서 실행하고 PlaitElement[] 데이터 모델을 완전히 이해한다.
+
+- [x] 1.1 Drawnix 저장소 포크 및 로컬 실행 확인
+- [x] 1.2 PlaitElement[] JSON 구조 분석 (마인드맵, 플로우차트, 자유 캔버스 각각)
+- [x] 1.3 기존 저장/불러오기 메커니즘 코드 파악 (localforage 위치, 교체 방법)
+- [x] 1.4 Plait board 업데이트 API 조사 (외부에서 데이터 주입 가능 여부)
+- [x] 1.5 markdown-to-drawnix / mermaid-to-drawnix 동작 확인
+  - MVP에서 사용하지 않지만 (→ D-003), 데이터 모델 파악의 일환으로 변환기 출력 구조를 확인하여 PlaitElement[] 이해를 심화
+- [x] 1.6 데이터 모델 문서화 → ARCHITECTURE.md 섹션 4 업데이트
+- [x] 1.7 AI 편집 난이도 평가 (쉬운 필드 vs 어려운 필드 분류) → ARCHITECTURE.md §7
+
+**완료 기준**:
+- Drawnix가 로컬에서 정상 실행됨
+- PlaitElement[] 구조가 문서화됨
+- AI 편집 난이도가 평가됨 (JSON 직접 편집 단일 경로 유지 여부 판단)
+
+**결정 시점**:
+- Drawnix 포크 전략 확정 (→ Q-001)
+- Plait v0.92.1 API 안정성 평가
+- JSON 직접 편집이 AI에게 너무 어려우면 변환 파이프라인 재검토 (→ D-003)
+
+---
+
+## Phase 2: 파일 동기화 레이어
+
+**목표**: 파일 ↔ 웹 양방향 동기화의 기본 골격을 구현한다.
+**의존**: Phase 1 완료 (1.2, 1.3, 1.4 필수 — 데이터 모델과 저장 메커니즘 이해 후)
+
+- [ ] 2.1 Custom Node Server 설정 (HTTP + WS + chokidar + Vite middleware, 단일 프로세스)
+  - [ ] 2.1.1 server.ts 진입점 작성 (http.createServer + express + Vite middleware mode)
+  - [ ] 2.1.2 WS 서버를 HTTP 서버에 마운트 (ws 라이브러리, 독립 경로 /ws)
+  - [ ] 2.1.3 개발 모드 HMR과 동기화 WS 공존 확인 (Vite HMR은 별도 내부 WS, 동기화는 /ws 경로)
+- [ ] 2.2 API Route: GET/PUT /api/sync (파일 읽기/쓰기)
+- [ ] 2.3 chokidar 파일 감시 서비스
+- [ ] 2.4 WebSocket 서버 (변경 알림 채널)
+- [ ] 2.5 프론트엔드 WebSocket 클라이언트 → Plait board 업데이트
+
+**완료 기준**:
+- Custom Server가 :3000에서 실행됨
+- 파일 변경 시 WebSocket 알림이 발송됨
+- 프론트엔드가 WebSocket 수신 후 board 갱신
+
+---
+
+## Phase 3: 양방향 동기화 완성
+
+**목표**: 안정적인 양방향 동기화를 완성한다.
+**의존**: Phase 2 완료 (2.1~2.5 모두 필수)
+
+- [ ] 3.1 웹 UI onChange → 디바운싱(300ms) → PUT /api/sync → 파일 저장
+- [ ] 3.2 localforage 저장소 → API Route 호출로 교체
+- [ ] 3.3 에코 방지 메커니즘 구현 (content hash)
+  - [ ] 3.3.1 SHA-256 해시 유틸리티 (src/shared/hash.ts)
+  - [ ] 3.3.2 쓰기 시 해시 저장 로직
+  - [ ] 3.3.3 chokidar 감지 시 해시 비교 로직
+  - [ ] 3.3.4 Race condition 처리 (isWriting 플래그, → ARCHITECTURE.md §6.1)
+- [ ] 3.4 원자적 파일 쓰기 (tmp + rename)
+- [ ] 3.5 JSON 유효성 검증 (파싱 실패 시 이전 상태 유지)
+- [ ] 3.6 에러 핸들링 (파일 잠금, 네트워크 오류 등)
+
+**완료 기준**:
+- 웹 편집 → 파일 자동 저장
+- 외부 편집 → 웹 자동 갱신 (조용히, → D-007)
+- 에코 루프 없음
+- JSON 파싱 실패 시 크래시 없음
+
+---
+
+## Phase 4: CLI 도구 + AI 편집 지원
+
+**목표**: CLI로 파일 관리, AI가 .vync JSON을 올바르게 편집할 수 있도록 지원 도구 제공.
+**의존**: Phase 3 완료 (4.1~4.2는 3.4 이후 가능, 4.3~4.5는 Phase 1 이후 병렬 작업 가능)
+
+- [ ] 4.1 `vync init <file>` — 빈 캔버스 .vync 파일 생성
+- [ ] 4.2 `vync open <file>` — Custom Server 시작 + 브라우저 열기
+- [ ] 4.3 CLAUDE.md 작성 — .vync JSON 구조, 편집 가이드, 좌표계, ID 생성 규칙
+- [ ] 4.4 .vync.schema.json 작성 — JSON Schema
+- [ ] 4.5 examples/*.vync 작성 — 마인드맵, 플로우차트 예시 파일
+
+**완료 기준**:
+- `vync init plan.vync` → 빈 캔버스 파일 생성됨
+- `vync open plan.vync` → 서버 시작 + 브라우저에서 캔버스 렌더링됨
+- Claude Code가 CLAUDE.md를 읽고 .vync JSON을 올바르게 편집할 수 있음
+
+---
+
+## Phase 5: E2E 검증
+
+**목표**: 전체 루프가 안정적으로 동작함을 검증한다.
+**의존**: Phase 3, Phase 4 완료
+
+- [ ] 5.1 웹에서 마인드맵 편집 → .vync 파일 자동 저장 확인
+- [ ] 5.2 vim으로 .vync 파일 수정 → 웹 자동 갱신 확인
+- [ ] 5.3 Claude Code가 .vync JSON 편집 → 웹 반영 확인
+- [ ] 5.4 웹에서 편집한 내용을 Claude Code가 읽기 확인
+- [ ] 5.5 빠른 연속 편집 → 에코 루프 없음 확인
+- [ ] 5.6 전체 루프 반영 시간 측정
+- [ ] 5.7 JSON 파싱 실패 시나리오 테스트
+
+**완료 기준 (= MVP 성공 기준)**:
+- [ ] `vync init` / `vync open` 동작
+- [ ] 웹 UI에서 노드 추가/이동/삭제 → .vync 파일 자동 저장
+- [ ] 외부에서 .vync 파일 수정 → 웹 UI 자동 갱신 (→ D-007: 시각적 알림 없이)
+- [ ] Claude Code가 CLAUDE.md 기반으로 .vync JSON 편집 가능
+- [ ] 전체 루프 3초 이내 (로컬 SSD 기준, 1KB .vync 파일)
+- [ ] 10회 연속 편집-저장 사이클에서 에코 트리거 0회
+- [ ] JSON 파싱 실패 시 이전 상태 유지, 서버 크래시 없음
+
+---
+
+## 리스크
+
+| 리스크 | 영향 | 완화 방안 | 평가 시점 |
+|--------|------|----------|----------|
+| Drawnix가 초기 프로젝트라 API 불안정 | 높음 | Plait 직접 사용으로 Fallback | Phase 1 |
+| PlaitElement[] JSON이 AI 편집에 복잡 | **평가 완료** | 마인드맵/도형은 용이, ArrowLine 바인딩은 어려움. CLAUDE.md + Schema로 충분히 완화 가능 → D-003 유지 (ARCHITECTURE.md §7) | Phase 1 |
+| 양방향 동기화 시 데이터 손실 | 높음 | 원자적 쓰기 + content hash 검증 | Phase 3 |
+| Custom Server에서 HMR과 WS 충돌 | **해소** | Vite HMR은 내부 WS 사용, 동기화 WS는 독립 경로 /ws — 충돌 없음 | Phase 1에서 확인 |
+| 대용량 .vync 파일에서 SHA-256 해싱 지연 | 낮음 | 일반 사용 시 파일 크기 소규모 예상. 병목 시 incremental hash 검토 | Phase 3 |
+| AI가 잘못된 PlaitElement JSON 생성 | 중간 | JSON Schema 검증 + CLAUDE.md 예시 강화. 실패율 높으면 D-003 재검토 | Phase 4 |
+| chokidar가 빠른 연속 변경 시 이벤트 누락 | 낮음 | 디바운싱으로 완화. 누락 시 polling fallback 검토 | Phase 3 |
+
+---
+
+## 미결 질문 (구현 시 결정)
+
+| ID | 질문 | 비고 | 결정 시점 |
+|----|------|------|----------|
+| Q-001 | Drawnix 포크 세부 전략 (전체 복사 vs submodule) | **해결**: 전체 복사 전략 채택. upstream remote으로 cherry-pick 가능 | Phase 1.1 |
+| Q-002 | WebSocket 메시지 포맷 (전체 파일 vs diff) | | Phase 2.4 |
+| Q-003 | Plait board 업데이트 API 존재 여부 | **해결**: `<Wrapper>` value prop 변경 시 자동 갱신 + NodeTransforms API 존재 | Phase 1.4 |
+| Q-004 | Custom Server에서 HMR + WS 공존 방법 | **해결**: Vite HMR은 내부 WS 사용, 동기화 WS는 독립 `ws` 라이브러리로 /ws 경로에 마운트. 서로 독립적이라 충돌 없음 | Phase 2.1 |
+| Q-005 | PlaitElement의 ID 생성 규칙 (UUID? nanoid?) | **해결**: `idCreator(5)` — 커스텀 5자 랜덤 문자열 (ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz) | Phase 1.2 |
