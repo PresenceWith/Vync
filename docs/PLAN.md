@@ -7,7 +7,7 @@
 
 ## 현재 상태
 
-**Phase**: 3 완료 → Phase 4 (CLI 도구 + AI 편집 지원) 진행 예정
+**Phase**: 4 완료 → Phase 5 (E2E 검증) 진행 예정
 
 ---
 
@@ -81,21 +81,27 @@
 
 ---
 
-## Phase 4: CLI 도구 + AI 편집 지원
+## Phase 4: CLI 도구 + Claude Code 통합 플러그인
 
-**목표**: CLI로 파일 관리, AI가 .vync JSON을 올바르게 편집할 수 있도록 지원 도구 제공.
-**의존**: Phase 3 완료 (4.1~4.2는 3.4 이후 가능, 4.3~4.5는 Phase 1 이후 병렬 작업 가능)
+**목표**: CLI로 파일 관리, Claude Code 플러그인으로 .vync 편집의 전체 라이프사이클 관리.
+**의존**: Phase 3 완료
+**설계**: `docs/plans/2026-03-07-phase4-claude-plugin-design.md`
+**구현**: `docs/plans/2026-03-07-phase4-implementation.md`
 
-- [ ] 4.1 `vync init <file>` — 빈 캔버스 .vync 파일 생성
-- [ ] 4.2 `vync open <file>` — Custom Server 시작 + 브라우저 열기
-- [ ] 4.3 CLAUDE.md 작성 — .vync JSON 구조, 편집 가이드, 좌표계, ID 생성 규칙
-- [ ] 4.4 .vync.schema.json 작성 — JSON Schema
-- [ ] 4.5 examples/*.vync 작성 — 마인드맵, 플로우차트 예시 파일
+- [x] 4.1 `vync init <file>` — 빈 캔버스 .vync 파일 생성 (src/cli/init.ts + tests)
+- [x] 4.2 `vync open <file>` + `vync stop` — server.ts 리팩토링 (startServer export, VYNC_HOME) + bin/vync.js CLI 진입점 + PID 관리 (~/.vync/server.pid)
+- [x] 4.3 Claude Code Skill (vync-editing) — SKILL.md + references (mindmap, geometry, arrow-line, coordinates)
+- [x] 4.4 .vync.schema.json + validate.js + generate-id.js — JSON Schema + 자동 검증 스크립트
+- [x] 4.5 examples/*.vync — 마인드맵, 플로우차트 예시 파일
+- [x] 4.6 Slash Commands — /vync (CLI wrapper), /vync-create (편집 진입점)
+- [x] 4.7 Hooks — PostToolUse 자동 검증 + SessionEnd 서버 정리
+- [x] 4.8 install.sh / uninstall.sh — 전역 설치/제거 (심볼릭 링크 + settings.json 머지)
 
 **완료 기준**:
 - `vync init plan.vync` → 빈 캔버스 파일 생성됨
 - `vync open plan.vync` → 서버 시작 + 브라우저에서 캔버스 렌더링됨
-- Claude Code가 CLAUDE.md를 읽고 .vync JSON을 올바르게 편집할 수 있음
+- Claude Code Skill이 .vync 편집을 가이드할 수 있음
+- PostToolUse hook이 .vync 파일 쓰기 시 자동 검증
 
 ---
 

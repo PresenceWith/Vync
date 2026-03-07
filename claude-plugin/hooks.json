@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // \"\"' | { read f; [[ \"$f\" == *.vync ]] && node \"$HOME/.claude/skills/vync-editing/scripts/validate.js\" \"$f\" 2>&1 || true; }"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f \"$HOME/.vync/server.pid\" ] && kill $(cat \"$HOME/.vync/server.pid\") 2>/dev/null && rm -f \"$HOME/.vync/server.pid\"; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -13,6 +13,9 @@
     "dev:server": "tsx src/server/server.ts"
   },
   "private": true,
+  "bin": {
+    "vync": "./bin/vync.js"
+  },
   "dependencies": {
     "@floating-ui/react": "^0.26.24",
     "@plait-board/markdown-to-drawnix": "^0.0.8",
@@ -34,6 +37,7 @@
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "mobile-detect": "^1.4.5",
+    "open": "^11.0.0",
     "open-color": "^1.9.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",

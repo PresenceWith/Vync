@@ -9,16 +9,10 @@ import type { VyncFile } from '../shared/types.js';
 
 const PORT = 3100;
 
-async function main() {
-  const filePath = process.argv[2];
-  if (!filePath) {
-    console.error('Usage: npx tsx src/server/server.ts <file.vync>');
-    process.exit(1);
-  }
-
-  const resolvedPath = path.resolve(filePath);
-
-  // Initialize sync service (validates file exists and is valid JSON)
+export async function startServer(
+  resolvedPath: string,
+  options: { openBrowser?: boolean } = {}
+) {
   const sync = createSyncService(resolvedPath);
   try {
     await sync.init();
@@ -88,7 +82,7 @@ async function main() {
 
   // --- Vite dev server (middleware mode) ---
 
-  const projectRoot = process.cwd();
+  const projectRoot = process.env.VYNC_HOME || process.cwd();
   const webAppRoot = path.resolve(projectRoot, 'apps/web');
 
   const vite = await createViteServer({
@@ -116,7 +110,7 @@ async function main() {
     }
   });
 
-  // --- Graceful shutdown ---
+  // --- Shutdown function ---
 
   const shutdown = async () => {
     console.log('\n[vync] Shutting down...');
@@ -124,20 +118,43 @@ async function main() {
     ws.close();
     await vite.close();
     server.close();
-    process.exit(0);
   };
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', async () => { await shutdown(); process.exit(0); });
+  process.on('SIGTERM', async () => { await shutdown(); process.exit(0); });
 
-  server.listen(PORT, '127.0.0.1', () => {
-    console.log(`[vync] Server running at http://localhost:${PORT}`);
-    console.log(`[vync] Watching: ${resolvedPath}`);
-    console.log(`[vync] WebSocket: ws://localhost:${PORT}/ws`);
+  const url = `http://localhost:${PORT}`;
+
+  await new Promise<void>((resolve) => {
+    server.listen(PORT, '127.0.0.1', () => {
+      console.log(`[vync] Server running at ${url}`);
+      console.log(`[vync] Watching: ${resolvedPath}`);
+      console.log(`[vync] WebSocket: ws://localhost:${PORT}/ws`);
+      resolve();
+    });
   });
+
+  if (options.openBrowser) {
+    const openModule = await import('open');
+    await openModule.default(url);
+  }
+
+  return { shutdown, server, url };
 }
 
-main().catch((err) => {
-  console.error('[vync] Fatal error:', err);
-  process.exit(1);
-});
+// Direct execution (backward compat with `npm run dev:server -- <file>`)
+const isDirectRun =
+  process.argv[1]?.endsWith('server.ts') ||
+  process.argv[1]?.endsWith('server.js');
+
+if (isDirectRun) {
+  const filePath = process.argv[2];
+  if (!filePath) {
+    console.error('Usage: npx tsx src/server/server.ts <file.vync>');
+    process.exit(1);
+  }
+  startServer(path.resolve(filePath)).catch((err) => {
+    console.error('[vync] Fatal error:', err);
+    process.exit(1);
+  });
+}

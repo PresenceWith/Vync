@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VyncFile",
+  "description": ".vync canvas file format",
+  "type": "object",
+  "required": ["version", "viewport", "elements"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "viewport": {
+      "$ref": "#/$defs/Viewport"
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PlaitElement"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Viewport": {
+      "type": "object",
+      "required": ["zoom", "x", "y"],
+      "properties": {
+        "zoom": { "type": "number", "exclusiveMinimum": 0 },
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "Point": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "PlaitElement": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string" },
+        "children": { "type": "array" },
+        "points": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Point" }
+        },
+        "groupId": { "type": "string" },
+        "angle": { "type": "number" }
+      }
+    }
+  }
+}

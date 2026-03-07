@@ -278,24 +278,39 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │       └── src/
 │           ├── wrapper.tsx        # <Wrapper> — value prop 변경 시 보드 갱신
 │           └── board.tsx          # <Board> — SVG 캔버스 렌더링
-├── src/                           # [VYNC 추가] 서버 + 공유 모듈
+├── src/                           # [VYNC 추가] 서버 + CLI + 공유 모듈
 │   ├── server/
-│   │   ├── server.ts              # Custom Node Server (HTTP+WS+chokidar+Vite middleware)
+│   │   ├── server.ts              # Custom Node Server (startServer export + 직접 실행 가드)
 │   │   ├── file-watcher.ts        # chokidar 파일 감시
 │   │   ├── sync-service.ts        # 동기화 로직 (에코 방지 + 원자적 쓰기 + JSON 유효성 검증)
 │   │   └── ws-handler.ts          # WebSocket 메시지 핸들러
+│   ├── cli/
+│   │   ├── main.ts                # CLI 진입점 (subcommand 라우팅)
+│   │   ├── init.ts                # vync init: 빈 .vync 파일 생성
+│   │   ├── open.ts                # vync open/stop: 서버 시작/종료 + PID 관리
+│   │   └── __tests__/
+│   │       └── init.test.ts       # init 유닛 테스트
 │   └── shared/
 │       ├── types.ts               # .vync 파일 포맷 타입
 │       └── hash.ts                # content hash 유틸리티 (SHA-256)
 ├── bin/
-│   └── vync.js                    # CLI 진입점                    [VYNC 추가]
+│   └── vync.js                    # CLI 진입점 (CommonJS, tsx spawn) [VYNC 추가]
+├── claude-plugin/                 # Claude Code 플러그인 소스       [VYNC 추가]
+│   ├── install.sh                 # ~/.claude/에 심볼릭 링크 + 설정 머지
+│   ├── uninstall.sh               # 정리
+│   ├── hooks.json                 # PostToolUse + SessionEnd 설정
+│   ├── skills/
+│   │   └── vync-editing/          # 편집 가이드 Skill
+│   │       ├── SKILL.md
+│   │       ├── references/        # 상세 가이드 (mindmap, geometry, arrow-line, coordinates)
+│   │       ├── scripts/           # validate.js, generate-id.js
+│   │       └── assets/            # schema.json, 예시 .vync 파일
+│   └── commands/                  # /vync, /vync-create 슬래시 커맨드
 ├── docs/                          # 프로젝트 문서
 ├── examples/                      # .vync 예시 파일                [VYNC 추가]
-├── __tests__/                     # 테스트                        [VYNC 추가]
-├── .vync.schema.json              # JSON Schema                   [VYNC 추가]
-├── CLAUDE.md                      # AI 편집 가이드                  [VYNC 추가]
+├── .vync.schema.json              # JSON Schema (프로젝트 루트 복사본) [VYNC 추가]
 ├── nx.json                        # nx monorepo 설정
-└── package.json                   # 루트 package.json (npm)
+└── package.json                   # 루트 package.json (npm, bin 필드 포함)
 ```
 
 ---
