@@ -19,7 +19,7 @@
                                            ↕ WebSocket
                                     ┌──────────────────┐
                                     │  Custom Node      │
-                                    │  Server (:3000)   │
+                                    │  Server (:3100)   │
                                     │  HTTP + WS +      │
                                     │  chokidar +       │
                                     │  Vite middleware   │
@@ -356,9 +356,9 @@ T3: 서버가 hash 저장 완료
 로컬 전용 도구이므로 최소한의 보안 조치:
 
 - **네트워크 바인딩**: 서버는 `127.0.0.1` (localhost)에만 바인딩. 외부 네트워크에서 접근 불가.
-- **CORS**: `Access-Control-Allow-Origin: http://localhost:3000` 으로 제한.
+- **CORS**: `Access-Control-Allow-Origin: http://localhost:3100` 으로 제한.
 - **파일 접근 범위**: CLI에서 지정한 .vync 파일만 읽기/쓰기. 서버가 임의 경로에 접근하지 않음.
-- **WebSocket**: `ws://localhost:3000` 에서만 수신. Origin 헤더 검증.
+- **WebSocket**: `ws://localhost:3100` 에서만 수신. Origin 헤더 검증.
 
 ### 6.6 초기화/종료 흐름
 

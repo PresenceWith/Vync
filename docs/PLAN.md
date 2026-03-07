@@ -7,7 +7,7 @@
 
 ## 현재 상태
 
-**Phase**: 1 완료 → Phase 2 (파일 동기화 레이어) 진행 예정
+**Phase**: 2 완료 → Phase 3 (양방향 동기화 완성) 진행 예정
 
 ---
 
@@ -41,17 +41,17 @@
 **목표**: 파일 ↔ 웹 양방향 동기화의 기본 골격을 구현한다.
 **의존**: Phase 1 완료 (1.2, 1.3, 1.4 필수 — 데이터 모델과 저장 메커니즘 이해 후)
 
-- [ ] 2.1 Custom Node Server 설정 (HTTP + WS + chokidar + Vite middleware, 단일 프로세스)
-  - [ ] 2.1.1 server.ts 진입점 작성 (http.createServer + express + Vite middleware mode)
-  - [ ] 2.1.2 WS 서버를 HTTP 서버에 마운트 (ws 라이브러리, 독립 경로 /ws)
-  - [ ] 2.1.3 개발 모드 HMR과 동기화 WS 공존 확인 (Vite HMR은 별도 내부 WS, 동기화는 /ws 경로)
-- [ ] 2.2 API Route: GET/PUT /api/sync (파일 읽기/쓰기)
-- [ ] 2.3 chokidar 파일 감시 서비스
-- [ ] 2.4 WebSocket 서버 (변경 알림 채널)
-- [ ] 2.5 프론트엔드 WebSocket 클라이언트 → Plait board 업데이트
+- [x] 2.1 Custom Node Server 설정 (HTTP + WS + chokidar + Vite middleware, 단일 프로세스)
+  - [x] 2.1.1 server.ts 진입점 작성 (http.createServer + express + Vite middleware mode)
+  - [x] 2.1.2 WS 서버를 HTTP 서버에 마운트 (ws 라이브러리, noServer 모드 + /ws 경로)
+  - [x] 2.1.3 개발 모드 HMR과 동기화 WS 공존 확인 (Vite HMR은 별도 내부 WS, 동기화는 /ws 경로)
+- [x] 2.2 API Route: GET/PUT /api/sync (파일 읽기/쓰기)
+- [x] 2.3 chokidar 파일 감시 서비스
+- [x] 2.4 WebSocket 서버 (변경 알림 채널)
+- [x] 2.5 프론트엔드 WebSocket 클라이언트 → Plait board 업데이트
 
 **완료 기준**:
-- Custom Server가 :3000에서 실행됨
+- Custom Server가 :3100에서 실행됨
 - 파일 변경 시 WebSocket 알림이 발송됨
 - 프론트엔드가 WebSocket 수신 후 board 갱신
 
@@ -142,7 +142,7 @@
 | ID | 질문 | 비고 | 결정 시점 |
 |----|------|------|----------|
 | Q-001 | Drawnix 포크 세부 전략 (전체 복사 vs submodule) | **해결**: 전체 복사 전략 채택. upstream remote으로 cherry-pick 가능 | Phase 1.1 |
-| Q-002 | WebSocket 메시지 포맷 (전체 파일 vs diff) | | Phase 2.4 |
+| Q-002 | WebSocket 메시지 포맷 (전체 파일 vs diff) | **해결**: 전체 파일 전송 채택. `{ type: 'file-changed', data: VyncFile }` 포맷. 파일 크기가 소규모이므로 diff 불필요 | Phase 2.4 |
 | Q-003 | Plait board 업데이트 API 존재 여부 | **해결**: `<Wrapper>` value prop 변경 시 자동 갱신 + NodeTransforms API 존재 | Phase 1.4 |
 | Q-004 | Custom Server에서 HMR + WS 공존 방법 | **해결**: Vite HMR은 내부 WS 사용, 동기화 WS는 독립 `ws` 라이브러리로 /ws 경로에 마운트. 서로 독립적이라 충돌 없음 | Phase 2.1 |
 | Q-005 | PlaitElement의 ID 생성 규칙 (UUID? nanoid?) | **해결**: `idCreator(5)` — 커스텀 5자 랜덤 문자열 (ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz) | Phase 1.2 |
