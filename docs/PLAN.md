@@ -138,7 +138,7 @@
 | 양방향 동기화 시 데이터 손실 | **해소** | 원자적 쓰기(tmp+rename) + SHA-256 content hash + isWriting 플래그 + JSON 유효성 검증 + lastValidContent fallback 구현 완료 | Phase 3 |
 | Custom Server에서 HMR과 WS 충돌 | **해소** | Vite HMR은 내부 WS 사용, 동기화 WS는 독립 경로 /ws — 충돌 없음 | Phase 1에서 확인 |
 | 대용량 .vync 파일에서 SHA-256 해싱 지연 | 낮음 | 일반 사용 시 파일 크기 소규모 예상. 병목 시 incremental hash 검토 | Phase 3 (구현 완료, 성능 문제 미발견) |
-| AI가 잘못된 PlaitElement JSON 생성 | 중간 | JSON Schema 검증 + CLAUDE.md 예시 강화. 실패율 높으면 D-003 재검토 | Phase 4 |
+| AI가 잘못된 PlaitElement JSON 생성 | **검증 완료** | JSON Schema 검증 + Skill 예시로 충분히 완화. Phase 5 E2E에서 Claude Code의 shape 변경/요소 추가 정상 반영 확인 → D-003 유지 | Phase 4 (Phase 5에서 검증) |
 | chokidar가 빠른 연속 변경 시 이벤트 누락 | 낮음 | 디바운싱으로 완화. 누락 시 polling fallback 검토 | Phase 3 (awaitWriteFinish 300ms 설정 완료) |
 
 ---
