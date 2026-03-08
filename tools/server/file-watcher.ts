@@ -1,10 +1,20 @@
 import chokidar from 'chokidar';
 import fs from 'node:fs/promises';
 
+export interface FileWatcherCallbacks {
+  onChange: (content: string) => void;
+  onDelete?: () => void;
+}
+
 export function createFileWatcher(
   filePath: string,
-  onChange: (content: string) => void
+  callbacks: FileWatcherCallbacks | ((content: string) => void)
 ) {
+  const { onChange, onDelete } =
+    typeof callbacks === 'function'
+      ? { onChange: callbacks, onDelete: undefined }
+      : callbacks;
+
   const watcher = chokidar.watch(filePath, {
     persistent: true,
     awaitWriteFinish: {
@@ -21,6 +31,13 @@ export function createFileWatcher(
       console.error('[vync] Error reading changed file:', err);
     }
   });
+
+  if (onDelete) {
+    watcher.on('unlink', () => {
+      console.log(`[vync] File deleted: ${filePath}`);
+      onDelete();
+    });
+  }
 
   return watcher;
 }
