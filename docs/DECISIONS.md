@@ -22,6 +22,7 @@
 | D-011 | [패키지 매니저: npm](#d-011) | **변경** | 2026-03-07 (변경: 2026-03-08) |
 | D-012 | [데스크톱 앱: Electron Thin Shell](#d-012) | 확정 | 2026-03-08 |
 | D-013 | [AI 편집 위임: Sub-agent 번역 레이어](#d-013) | 확정 | 2026-03-09 |
+| D-014 | [멀티 파일: Hub Server](#d-014) | 확정 | 2026-03-09 |
 
 ---
 
@@ -287,3 +288,41 @@ Electron main process
 **설계 문서**: `docs/plans/2026-03-09-subagent-translator-design.md`
 
 **재검토 조건**: Claude Code의 에이전트 시스템이 변경되어 커스텀 에이전트 방식이 더 이상 유효하지 않을 때
+
+---
+
+### D-014
+
+**멀티 파일: Hub Server (단일 서버, 다중 파일)**
+
+단일 서버(:3100)가 여러 `.vync` 파일을 동시에 관리하는 허브 아키텍처로 전환한다.
+
+```
+vync open A.vync  ─→  POST /api/files  ─→  Hub Server :3100
+vync open B.vync  ─→  POST /api/files  ─→       ↓
+                                          FileRegistry
+                                          ├─ A.vync (SyncService + FileWatcher + WS Clients)
+                                          └─ B.vync (SyncService + FileWatcher + WS Clients)
+```
+
+| 대안 | 기각 사유 |
+|------|----------|
+| 멀티 인스턴스 (파일당 서버) | 포트 충돌, Vite 인스턴스 중복, 멀티 탭 UI 불가 |
+| 디렉토리 감시 | 파일이 여러 디렉토리에 분산됨. 감시 범위 설정 불가 |
+| 파일 식별자로 해시/UUID | 디버깅 어려움. CLI가 서버 없이 URL 구성 불가 |
+
+**핵심 설계 (M-1~M-8)**:
+- **M-1**: 허브 서버 — 리소스 효율, 탭+윈도우 모두 지원
+- **M-2**: 명시적 파일 등록 (`vync open` → POST /api/files)
+- **M-3**: 절대경로를 파일 식별자 (`?file=/path/to/file.vync`)
+- **M-4**: 자가복구(auto-register on GET) 제거 — REST 원칙 + LFI 방지
+- **M-5**: 하위 호환 폐기 (`?file=` 필수, 암묵적 폴백 없음)
+- **M-6**: PID 파일 JSON 포맷 전환 (port 포함, 버전 마커)
+- **M-7**: 뷰포트 WebSocket 브로드캐스트 제외 (탭 간 zoom/pan 충돌 방지)
+- **M-8**: 보안 — validateFilePath(allowlist + `.vync` 확장자 + realpath) + Host 헤더 검증
+
+**구현**: 2단계 — 1단계: 허브 서버 + 멀티 윈도우, 2단계: 멀티 탭 UI
+**설계 문서**: `docs/plans/2026-03-09-multi-file-hub-design.md`
+**구현 계획**: `docs/plans/2026-03-09-multi-file-hub-implementation.md`
+
+**재검토 조건**: 단일 서버에서 동시 파일 수가 50개 이상으로 증가하여 성능 병목 발생 시

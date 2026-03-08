@@ -7,7 +7,7 @@
 
 ## 현재 상태
 
-**Phase**: 7 완료 (Sub-agent 번역 레이어)
+**Phase**: 8 설계 완료 (멀티 파일 Hub Server) — 구현 대기
 
 ---
 
@@ -174,6 +174,40 @@
 - [x] 메인 세션이 prose만 교환하여 context window 보호
 - [x] `/vync create` → sub-agent → 한 줄 요약 반환 흐름 동작
 - [x] Install script가 에이전트 파일을 `~/.claude/agents/`에 설치
+
+---
+
+## Phase 8: 멀티 파일 Hub Server (1단계)
+
+**목표**: 단일 서버(:3100)가 여러 `.vync` 파일을 동시에 관리하는 허브 아키텍처로 전환한다.
+**의존**: Phase 7 완료
+**설계**: `docs/plans/2026-03-09-multi-file-hub-design.md` (→ D-014)
+**구현**: `docs/plans/2026-03-09-multi-file-hub-implementation.md`
+
+- [ ] 8.1 공유 타입 확장 — WsMessage에 filePath, file-closed, file-deleted, error 추가
+- [ ] 8.2 보안 레이어 — validateFilePath (allowlist + .vync 확장자 + realpath) + hostGuard
+- [ ] 8.3 SyncService drain() — 미완료 쓰기 큐 flush (graceful unregister 지원)
+- [ ] 8.4 FileWatcher unlink 이벤트 — 파일 삭제 감지 + 자동 unregister
+- [ ] 8.5 FileRegistry — 핵심 추상화 (register/unregister/getSlot + 동기적 슬롯 확보 + idle timeout)
+- [ ] 8.6 WebSocket 핸들러 — 파일 스코프 라우팅 (`?file=` 파라미터)
+- [ ] 8.7 서버 Hub 모드 리팩토링 — startServer() → FileRegistry 기반, API 엔드포인트 변경
+- [ ] 8.8 CLI — PID JSON 포맷 + 2-state open + close 커맨드
+- [ ] 8.9 프론트엔드 — FileBoard 컴포넌트 추출 + `?file=` URL 파라미터 지원
+- [ ] 8.10 Electron — register 방식 전환 (restart → POST /api/files)
+- [ ] 8.11 Hooks — SessionEnd 변경 (kill → DELETE /api/files?all=true)
+- [ ] 8.12 /vync 커맨드 문서 — close 서브커맨드 추가
+- [ ] 8.13 통합 테스트 — 멀티 파일 E2E (2개 파일 동시 등록/편집/해제)
+- [ ] 8.14 문서 업데이트 — ARCHITECTURE.md, PLAN.md, CLAUDE.md
+- [ ] 8.15 전체 테스트 + 검증
+
+**완료 기준**:
+- [ ] `vync open A.vync` + `vync open B.vync` → 두 파일 동시 접근 가능
+- [ ] 각 브라우저 탭에서 `?file=` 파라미터로 다른 파일 표시
+- [ ] 파일별 독립 WebSocket 브로드캐스트 (A 편집이 B에 영향 없음)
+- [ ] `vync close A.vync` → A만 해제, B는 유지
+- [ ] 서버가 0개 파일일 때 자동 종료하지 않음 (idle timeout 30분 후 자동 해제)
+
+> **2단계 (멀티 탭 UI)**: 1단계 완료 후 계획 문서를 동기화하고 별도 Phase로 진행. 설계 미리보기는 `docs/plans/2026-03-09-multi-file-hub-design.md` §Stage 2 참조.
 
 ---
 
