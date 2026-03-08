@@ -97,7 +97,7 @@ D-008에서 Last Write Wins로 결정. 후속 개선 옵션:
 
 | 항목 | 설명 |
 |------|------|
-| 배포/패키징 | `npx vync` / `bunx vync`로 즉시 실행, npm 발행 |
+| 배포/패키징 | Electron DMG 패키징 구현 완료 (→ D-012). 추가: 코드 서명/공증, 자동 업데이트, `npx vync`/npm 발행 |
 | 다중 파일 | 다중 탭, 대시보드, 파일 간 링크 |
 | 보안 | 디렉토리 접근 제한, WebSocket localhost 제한 |
 | `vync watch` | UI 없이 파일 감시 데몬 (자동 변환 파이프라인용) |

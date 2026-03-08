@@ -20,6 +20,7 @@
 | D-009 | [에코 방지: Content Hash](#d-009) | 확정 | 2026-03-07 |
 | D-010 | [MCP 서버: MVP 제외](#d-010) | 확정 | 2026-03-07 |
 | D-011 | [패키지 매니저: npm](#d-011) | **변경** | 2026-03-07 (변경: 2026-03-08) |
+| D-012 | [데스크톱 앱: Electron Thin Shell](#d-012) | 확정 | 2026-03-08 |
 
 ---
 
@@ -98,7 +99,7 @@ HTTP + WebSocket + chokidar를 단일 Custom Node Server 프로세스(:3100)에 
 | Vite Plugin (`configureServer`) | `configureServer`는 dev 전용 — 프로덕션에서 동작하지 않아 두 개의 코드 경로 필요 |
 | 별도 Node.js 서버 (포트 분리) | 두 프로세스 관리, CORS/proxy 설정, CLI 복잡성 증가 |
 | Next.js Custom Server | Drawnix가 Vite 기반 — Next.js 전환은 비용만 크고 이점 없음 (SSR 불필요) |
-| Electron | 배포 복잡성 극대화, 로컬 웹앱으로 충분 |
+| Electron (서버 대체) | ~~배포 복잡성 극대화, 로컬 웹앱으로 충분~~ → Phase 6에서 Electron을 "thin shell"로 채택 (→ D-012). 서버 아키텍처(D-004)는 유지하되 Electron이 감싸는 구조. |
 
 **근거**: 로컬 전용 도구이므로 단일 프로세스 = 단일 포트 = 단순한 UX. `vync open` 한 번으로 모든 것 시작. WS/API/chokidar 코드가 dev/prod에서 100% 동일한 코드 경로를 사용.
 **트레이드오프**: express 의존성 추가, Vite middleware mode 학습 필요 (잘 문서화됨)
@@ -227,3 +228,32 @@ Drawnix가 npm + nx monorepo를 사용하므로 그대로 유지.
 | bun | Drawnix/nx 호환성 미검증, 안정성 리스크 |
 
 **재검토 조건**: npm이 의존성 해결이나 빌드 속도에서 병목이 될 때
+
+---
+
+### D-012
+
+**데스크톱 앱: Electron Thin Shell (in-process server + BrowserWindow)**
+
+Electron main process가 `startServer()`를 in-process로 호출하고, BrowserWindow가 `http://localhost:3100`을 로드. 개발 모드에서는 Vite middleware, 프로덕션에서는 `express.static`.
+
+```
+Electron main process
+  → startServer(filePath, { mode, port, staticDir })
+    → Express + WS + chokidar (in-process)
+  → BrowserWindow → http://localhost:<port>
+  → 창 닫기 → shutdown() → app.quit()
+```
+
+| 대안 | 기각 사유 |
+|------|----------|
+| Tauri | Drawnix가 Node.js 서버(Express + WS + chokidar) 의존 — Rust 백엔드로 재구현 필요 |
+| 별도 프로세스 (Electron + 외부 서버) | 프로세스 관리 복잡, 서버가 경량이므로 in-process가 적합 |
+| PWA | 파일 연결(더블클릭 → 앱 열림) 불가, 네이티브 느낌 부족 |
+
+**빌드**: esbuild (main.ts → dist/electron/main.js), electron-builder (macOS DMG)
+**파일 연결**: `.vync` 확장자 → Vync.app (macOS)
+**단일 인스턴스**: `app.requestSingleInstanceLock()`
+**CLI 통합**: `vync open`이 Electron spawn, 폴백으로 기존 tsx daemon
+
+**재검토 조건**: 크로스 플랫폼(Windows/Linux) 지원이 필요할 때, 또는 Electron 번들 크기가 문제될 때

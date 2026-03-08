@@ -81,6 +81,7 @@
 | 파일 포맷 | .vync (JSON) | D-005 |
 | CLI | Node.js (bin 스크립트) | D-006 |
 | 패키지 매니저 | npm + nx monorepo | D-011 |
+| 데스크톱 | Electron + electron-builder (macOS DMG) | D-012 |
 | 테스트 | Vitest | Vite 생태계, TS 네이티브 |
 
 ---
@@ -278,7 +279,10 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │       └── src/
 │           ├── wrapper.tsx        # <Wrapper> — value prop 변경 시 보드 갱신
 │           └── board.tsx          # <Board> — SVG 캔버스 렌더링
-├── src/                           # [VYNC 추가] 서버 + CLI + 공유 모듈
+├── src/                           # [VYNC 추가] 서버 + CLI + Electron + 공유 모듈
+│   ├── electron/
+│   │   ├── main.ts                # Electron main process (단일 인스턴스, 파일 연결, dev/prod) [VYNC 추가]
+│   │   └── preload.ts             # preload (window.vyncDesktop 플래그) [VYNC 추가]
 │   ├── server/
 │   │   ├── server.ts              # Custom Node Server (startServer export + 직접 실행 가드)
 │   │   ├── file-watcher.ts        # chokidar 파일 감시
@@ -308,6 +312,7 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │   └── commands/                  # /vync, /vync-create 슬래시 커맨드
 ├── docs/                          # 프로젝트 문서
 ├── examples/                      # .vync 예시 파일                [VYNC 추가]
+├── electron-builder.yml           # Electron 패키징 설정 (macOS DMG)  [VYNC 추가]
 ├── .vync.schema.json              # JSON Schema (프로젝트 루트 복사본) [VYNC 추가]
 ├── nx.json                        # nx monorepo 설정
 └── package.json                   # 루트 package.json (npm, bin 필드 포함)
@@ -375,15 +380,20 @@ T3: 서버가 hash 저장 완료
 
 ### 6.6 초기화/종료 흐름
 
-**서버 시작 (`vync open <file>`)** — 기본: 데몬 모드, `--foreground`로 블로킹 모드:
+**서버 시작 (`vync open <file>`)** — Electron 우선, 폴백으로 tsx daemon:
 ```
-[데몬 모드 — 기본]
-1. 파일 존재 확인 → 없으면 에러 메시지 + 종료 ("vync init으로 먼저 생성하세요")
+[Electron 모드 — 기본 (dist/electron/main.js 존재 시)]
+1. 파일 존재 확인 → 없으면 에러 메시지 + 종료
 2. 기존 서버 PID 확인 → 이미 실행 중이면 에러 + 종료
+3. Electron 바이너리 + dist/electron/main.js 존재 확인
+4. electron dist/electron/main.js <file>을 detached spawn
+5. 300ms 간격 폴링으로 서버 준비 대기 (최대 10초)
+6. Electron 앱이 in-process로 서버 실행 + BrowserWindow 열기
+
+[tsx 데몬 모드 — 폴백 (Electron 빌드 없을 때)]
+1~2 동일
 3. tsx로 server.ts를 detached 자식 프로세스로 spawn
-4. 300ms 간격 폴링으로 서버 준비 대기 (최대 10초, 자식 생존 확인 포함)
-5. 준비되면 브라우저 열기 → 상태 출력 (PID, URL, 로그 경로) → CLI 즉시 종료
-6. 서버는 백그라운드에서 계속 실행 (~/.vync/server.pid에 PID 저장)
+4. 폴링 대기 → 브라우저 열기 → CLI 즉시 종료
 
 [포그라운드 모드 — --foreground]
 1~2 동일

@@ -7,7 +7,7 @@
 
 ## 현재 상태
 
-**Phase**: 5 완료 (MVP 성공)
+**Phase**: 6 완료 (Electron 데스크톱 앱)
 
 ---
 
@@ -126,6 +126,32 @@
 - [x] 전체 루프 3초 이내 (로컬 SSD 기준, 1KB .vync 파일) — 실측 ~0.6초
 - [x] 10회 연속 편집-저장 사이클에서 에코 트리거 0회
 - [x] JSON 파싱 실패 시 이전 상태 유지, 서버 크래시 없음
+
+---
+
+## Phase 6: Electron 데스크톱 앱
+
+**목표**: Vync를 Electron으로 감싸서 네이티브 데스크톱 앱처럼 동작하게 한다 (.vync 더블클릭 → 앱 열림, 창 닫기 → 자동 종료).
+**의존**: Phase 5 완료
+**설계**: `docs/plans/2026-03-08-electron-desktop-design.md`
+**구현**: `docs/plans/2026-03-08-electron-implementation.md`
+
+- [x] 6.1 서버 리팩토링 — process.exit 제거, 시그널 핸들러 분리, 설정 가능 포트, EADDRINUSE 처리 (→ D-012)
+- [x] 6.2 조건부 Vite import + 프로덕션 정적 서빙 (dev: Vite middleware, prod: express.static)
+- [x] 6.3 WebSocket 클라이언트 종료 수정 (shutdown 시 client.terminate())
+- [x] 6.4 Electron 의존성 + 빌드 스크립트 (dev:desktop, build:desktop, package:desktop)
+- [x] 6.5 Electron main process (단일 인스턴스, macOS open-file, 파일 피커, dev/prod 모드)
+- [x] 6.6 Electron preload script (window.vyncDesktop 플래그)
+- [x] 6.7 electron-builder 설정 (macOS DMG, .vync 파일 연결)
+- [x] 6.8 CLI → Electron 스폰 + 데몬 폴백 (dist/electron/main.js 없으면 tsx daemon)
+- [x] 6.9 Analytics 게이팅 (Electron에서 Umami 비활성화)
+- [x] 6.10 E2E 검증 (dev 모드 실행, CLI 스폰, vync stop, 데몬 폴백)
+
+**완료 기준**:
+- [x] Electron 앱이 .vync 파일을 열고 서버를 in-process로 실행
+- [x] `vync open`이 Electron 앱을 spawn (폴백: 기존 tsx daemon)
+- [x] 창 닫기 → 서버 종료 + 프로세스 종료
+- [x] dev 모드에서 Vite HMR 정상 동작
 
 ---
 
