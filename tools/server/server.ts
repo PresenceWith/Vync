@@ -4,7 +4,7 @@ import express from 'express';
 import { createFileWatcher } from './file-watcher.js';
 import { createWsServer } from './ws-handler.js';
 import { createSyncService } from './sync-service.js';
-import type { VyncFile } from '../shared/types.js';
+import type { VyncFile } from '@vync/shared';
 
 const DEFAULT_PORT = 3100;
 
@@ -179,7 +179,7 @@ const isDirectRun =
 if (isDirectRun) {
   const filePath = process.argv[2];
   if (!filePath) {
-    console.error('Usage: npx tsx src/server/server.ts <file.vync>');
+    console.error('Usage: npx tsx tools/server/server.ts <file.vync>');
     process.exit(1);
   }
   startServer(path.resolve(filePath))

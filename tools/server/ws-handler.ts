@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'node:http';
-import type { WsMessage } from '../shared/types.js';
+import type { WsMessage } from '@vync/shared';
 
 export function createWsServer(server: Server, port: number) {
   const wss = new WebSocketServer({ noServer: true });
