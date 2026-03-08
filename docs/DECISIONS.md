@@ -139,9 +139,11 @@ HTTP + WebSocket + chokidar를 단일 Custom Node Server 프로세스(:3100)에 
 **파일 관리 UX: CLI 중심**
 
 ```bash
-$ vync init plan.vync        # 빈 캔버스 파일 생성
-$ vync open plan.vync         # 서버 시작 + 브라우저 열기
+$ vync init plan             # CWD/.vync/plan.vync 생성
+$ vync open plan             # .vync/plan.vync 서버 시작 + 브라우저 열기
 ```
+
+bare filename은 `CWD/.vync/` 하위에 저장 (`.git/`, `.vscode/`와 같은 관례). 명시적 상대/절대 경로는 그대로 해석.
 
 웹 UI에는 파일 목록, 사이드바, 프로젝트 탐색기 없음. 순수 캔버스 에디터.
 

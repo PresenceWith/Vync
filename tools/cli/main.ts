@@ -4,14 +4,14 @@ import { vyncOpen, vyncStop } from './open.js';
 const USAGE = `Usage: vync <command> [options]
 
 Commands:
-  init <file>    Create an empty .vync canvas file
-  open <file>    Start server (daemon) and open browser
+  init <file>    Create .vync canvas in CWD/.vync/
+  open <file>    Start server and open browser
                  --foreground  Run in foreground (blocking)
   stop           Stop the running server
 
 Examples:
-  vync init plan.vync
-  vync open plan.vync
+  vync init plan        # creates .vync/plan.vync
+  vync open plan        # opens .vync/plan.vync
   vync stop`;
 
 async function main() {

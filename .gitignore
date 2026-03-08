@@ -56,3 +56,6 @@ server.log
 # Environment
 .env
 .env.*
+
+# Worktrees
+.worktrees/

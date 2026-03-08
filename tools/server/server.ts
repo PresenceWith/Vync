@@ -4,7 +4,7 @@ import express from 'express';
 import { createFileWatcher } from './file-watcher.js';
 import { createWsServer } from './ws-handler.js';
 import { createSyncService } from './sync-service.js';
-import type { VyncFile } from '../shared/types.js';
+import type { VyncFile } from '@vync/shared';
 
 const DEFAULT_PORT = 3100;
 
@@ -146,15 +146,16 @@ export async function startServer(
   const url = `http://localhost:${port}`;
 
   await new Promise<void>((resolve, reject) => {
-    server.once('error', (err: NodeJS.ErrnoException) => {
+    const onStartupError = (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
         reject(new Error(`[vync] Port ${port} is already in use`));
       } else {
         reject(err);
       }
-    });
+    };
+    server.once('error', onStartupError);
     server.listen(port, '127.0.0.1', () => {
-      server.removeAllListeners('error');
+      server.removeListener('error', onStartupError);
       console.log(`[vync] Server running at ${url}`);
       console.log(`[vync] Watching: ${resolvedPath}`);
       console.log(`[vync] WebSocket: ws://localhost:${port}/ws`);
@@ -178,7 +179,7 @@ const isDirectRun =
 if (isDirectRun) {
   const filePath = process.argv[2];
   if (!filePath) {
-    console.error('Usage: npx tsx src/server/server.ts <file.vync>');
+    console.error('Usage: npx tsx tools/server/server.ts <file.vync>');
     process.exit(1);
   }
   startServer(path.resolve(filePath))
