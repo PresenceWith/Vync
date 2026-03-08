@@ -4,7 +4,7 @@ const path = require('path');
 
 const projectRoot = process.env.VYNC_HOME || path.resolve(__dirname, '..');
 const tsx = path.join(projectRoot, 'node_modules', '.bin', 'tsx');
-const main = path.join(projectRoot, 'src', 'cli', 'main.ts');
+const main = path.join(projectRoot, 'tools', 'cli', 'main.ts');
 
 try {
   execFileSync(tsx, [main, ...process.argv.slice(2)], {

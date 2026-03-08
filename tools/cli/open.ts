@@ -143,7 +143,7 @@ async function runElectron(resolved: string): Promise<void> {
 async function runDaemon(resolved: string): Promise<void> {
   const projectRoot = process.env.VYNC_HOME || process.cwd();
   const tsxPath = path.join(projectRoot, 'node_modules', '.bin', 'tsx');
-  const serverScript = path.join(projectRoot, 'src', 'server', 'server.ts');
+  const serverScript = path.join(projectRoot, 'tools', 'server', 'server.ts');
 
   // Verify tsx exists
   try {

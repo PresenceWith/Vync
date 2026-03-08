@@ -178,7 +178,7 @@ const isDirectRun =
 if (isDirectRun) {
   const filePath = process.argv[2];
   if (!filePath) {
-    console.error('Usage: npx tsx src/server/server.ts <file.vync>');
+    console.error('Usage: npx tsx tools/server/server.ts <file.vync>');
     process.exit(1);
   }
   startServer(path.resolve(filePath))
