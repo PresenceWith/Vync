@@ -17,7 +17,7 @@ echo "  [ok] Skill: vync-editing"
 
 # 2. Commands
 mkdir -p "$CLAUDE_DIR/commands"
-for cmd in vync.md vync-create.md; do
+for cmd in vync.md; do
   target="$CLAUDE_DIR/commands/$cmd"
   [ -L "$target" ] && rm "$target"
   [ -f "$target" ] && rm "$target"
@@ -25,7 +25,22 @@ for cmd in vync.md vync-create.md; do
   echo "  [ok] Command: /${cmd%.md}"
 done
 
-# 3. Hooks — merge into settings.json (with backup)
+# Remove deprecated /vync-create (merged into /vync create)
+deprecated="$CLAUDE_DIR/commands/vync-create.md"
+[ -L "$deprecated" ] && rm "$deprecated" && echo "  [ok] Removed deprecated: /vync-create"
+[ -f "$deprecated" ] && rm "$deprecated" && echo "  [ok] Removed deprecated: /vync-create"
+
+# 3. Agents
+agents_dir="$CLAUDE_DIR/agents"
+mkdir -p "$agents_dir"
+for agent in vync-translator.md; do
+  src="$SCRIPT_DIR/agents/$agent"
+  dst="$agents_dir/$agent"
+  [ -L "$dst" ] && rm "$dst"
+  ln -s "$src" "$dst" && echo "  [ok] Agent: ${agent%.md}"
+done
+
+# 4. Hooks — merge into settings.json (with backup)
 SETTINGS="$CLAUDE_DIR/settings.json"
 if [ ! -f "$SETTINGS" ]; then
   echo '{}' > "$SETTINGS"
@@ -61,7 +76,7 @@ fs.writeFileSync('$SETTINGS', JSON.stringify(settings, null, 2));
 echo "  [ok] Hooks: PostToolUse, SessionEnd"
 echo "  [ok] Env: VYNC_HOME=$PROJECT_ROOT"
 
-# 4. CLI access via PATH (no npm link — private: true)
+# 5. CLI access via PATH (no npm link — private: true)
 echo ""
 echo "[vync] Installation complete!"
 echo "  Restart Claude Code to activate."
