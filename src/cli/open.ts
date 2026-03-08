@@ -41,7 +41,103 @@ async function runForeground(resolved: string): Promise<void> {
   await fs.writeFile(PID_FILE, String(process.pid), 'utf-8');
 
   const { startServer } = await import('../server/server.js');
-  await startServer(resolved, { openBrowser: true });
+  const { shutdown } = await startServer(resolved, { openBrowser: true });
+
+  process.on('SIGINT', async () => {
+    await shutdown();
+    process.exit(0);
+  });
+  process.on('SIGTERM', async () => {
+    await shutdown();
+    process.exit(0);
+  });
+}
+
+async function findElectronBinary(): Promise<string | null> {
+  const projectRoot = process.env.VYNC_HOME || process.cwd();
+  const electronPath = path.join(
+    projectRoot,
+    'node_modules',
+    '.bin',
+    'electron'
+  );
+  const compiledMain = path.join(projectRoot, 'dist', 'electron', 'main.js');
+
+  try {
+    await fs.access(electronPath, fsSync.constants.X_OK);
+    await fs.access(compiledMain);
+    return electronPath;
+  } catch {
+    return null;
+  }
+}
+
+async function runElectron(resolved: string): Promise<void> {
+  const projectRoot = process.env.VYNC_HOME || process.cwd();
+  const electronPath = path.join(
+    projectRoot,
+    'node_modules',
+    '.bin',
+    'electron'
+  );
+  const compiledMain = path.join(projectRoot, 'dist', 'electron', 'main.js');
+
+  await fs.mkdir(VYNC_DIR, { recursive: true });
+  const logFd = fsSync.openSync(LOG_FILE, 'w');
+
+  const child = spawn(electronPath, [compiledMain, resolved], {
+    detached: true,
+    stdio: ['ignore', logFd, logFd],
+    cwd: projectRoot,
+    env: { ...process.env, VYNC_HOME: projectRoot },
+  });
+
+  const childPid = child.pid;
+  if (!childPid) {
+    fsSync.closeSync(logFd);
+    console.error('[vync] Failed to spawn Electron process.');
+    process.exit(1);
+  }
+
+  await fs.writeFile(PID_FILE, String(childPid), 'utf-8');
+  child.unref();
+  fsSync.closeSync(logFd);
+
+  // Poll until server is ready
+  const url = `http://localhost:${PORT}`;
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < POLL_TIMEOUT) {
+    try {
+      process.kill(childPid, 0);
+    } catch {
+      console.error('[vync] Electron process exited unexpectedly.');
+      console.error(`[vync] Check logs: ${LOG_FILE}`);
+      await fs.unlink(PID_FILE).catch(() => {});
+      process.exit(1);
+    }
+
+    try {
+      const res = await fetch(`${url}/api/sync`);
+      if (res.ok) {
+        console.log(`[vync] Vync app running (PID ${childPid})`);
+        console.log(`[vync] Watching: ${resolved}`);
+        console.log(`[vync] Log: ${LOG_FILE}`);
+        return;
+      }
+    } catch {
+      // Not ready yet
+    }
+
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+  }
+
+  console.error(
+    `[vync] Electron did not become ready within ${POLL_TIMEOUT / 1000}s.`
+  );
+  console.error(`[vync] Check logs: ${LOG_FILE}`);
+  await fs.unlink(PID_FILE).catch(() => {});
+  process.exit(1);
 }
 
 async function runDaemon(resolved: string): Promise<void> {
@@ -118,7 +214,9 @@ async function runDaemon(resolved: string): Promise<void> {
   }
 
   // Timeout
-  console.error(`[vync] Server did not become ready within ${POLL_TIMEOUT / 1000}s.`);
+  console.error(
+    `[vync] Server did not become ready within ${POLL_TIMEOUT / 1000}s.`
+  );
   console.error(`[vync] Check logs: ${LOG_FILE}`);
   // Clean up PID file but leave process running for debugging
   await fs.unlink(PID_FILE).catch(() => {});
@@ -134,6 +232,12 @@ export async function vyncOpen(
 
   if (opts.foreground) {
     return runForeground(resolved);
+  }
+
+  // Try Electron first, fall back to daemon mode
+  const electronBinary = await findElectronBinary();
+  if (electronBinary) {
+    return runElectron(resolved);
   }
   return runDaemon(resolved);
 }

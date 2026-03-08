@@ -1,28 +1,33 @@
 import http from 'node:http';
 import path from 'node:path';
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import { createFileWatcher } from './file-watcher.js';
 import { createWsServer } from './ws-handler.js';
 import { createSyncService } from './sync-service.js';
 import type { VyncFile } from '../shared/types.js';
 
-const PORT = 3100;
+const DEFAULT_PORT = 3100;
 
 export async function startServer(
   resolvedPath: string,
-  options: { openBrowser?: boolean } = {}
+  options: {
+    openBrowser?: boolean;
+    port?: number;
+    mode?: 'development' | 'production';
+    staticDir?: string;
+  } = {}
 ) {
+  const port = options.port ?? DEFAULT_PORT;
+  const mode = options.mode ?? 'development';
   const sync = createSyncService(resolvedPath);
   try {
     await sync.init();
   } catch (err: any) {
-    if (err.code === 'ENOENT') {
-      console.error(`[vync] File not found: ${resolvedPath}`);
-    } else {
-      console.error(`[vync] Invalid JSON in file: ${resolvedPath}`);
-    }
-    process.exit(1);
+    const msg =
+      err.code === 'ENOENT'
+        ? `File not found: ${resolvedPath}`
+        : `Invalid JSON in file: ${resolvedPath}`;
+    throw new Error(`[vync] ${msg}`);
   }
 
   const app = express();
@@ -31,8 +36,8 @@ export async function startServer(
   // --- CORS (localhost only) ---
 
   const allowedOrigins = [
-    `http://localhost:${PORT}`,
-    `http://127.0.0.1:${PORT}`,
+    `http://localhost:${port}`,
+    `http://127.0.0.1:${port}`,
   ];
 
   app.use((_req, res, next) => {
@@ -80,25 +85,35 @@ export async function startServer(
 
   const server = http.createServer(app);
 
-  // --- Vite dev server (middleware mode) ---
+  // --- Frontend serving (dev: Vite middleware, prod: static files) ---
 
-  const projectRoot = process.env.VYNC_HOME || process.cwd();
-  const webAppRoot = path.resolve(projectRoot, 'apps/web');
+  let vite: { close: () => Promise<void> } | null = null;
 
-  const vite = await createViteServer({
-    configFile: path.resolve(webAppRoot, 'vite.config.ts'),
-    root: webAppRoot,
-    server: {
-      middlewareMode: true,
-      hmr: { server },
-    },
-  });
+  if (mode === 'production' && options.staticDir) {
+    app.use(express.static(options.staticDir));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(options.staticDir!, 'index.html'));
+    });
+  } else {
+    const { createServer: createViteServer } = await import('vite');
+    const projectRoot = process.env.VYNC_HOME || process.cwd();
+    const webAppRoot = path.resolve(projectRoot, 'apps/web');
 
-  app.use(vite.middlewares);
+    vite = await createViteServer({
+      configFile: path.resolve(webAppRoot, 'vite.config.ts'),
+      root: webAppRoot,
+      server: {
+        middlewareMode: true,
+        hmr: { server },
+      },
+    });
+
+    app.use(vite.middlewares);
+  }
 
   // --- WebSocket server (sync channel on /ws) ---
 
-  const ws = createWsServer(server, PORT);
+  const ws = createWsServer(server, port);
 
   // --- File watcher ---
 
@@ -116,20 +131,33 @@ export async function startServer(
     console.log('\n[vync] Shutting down...');
     await watcher.close();
     ws.close();
-    await vite.close();
-    server.close();
+    if (vite) {
+      await vite.close();
+    }
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 3000);
+      server.close(() => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
   };
 
-  process.on('SIGINT', async () => { await shutdown(); process.exit(0); });
-  process.on('SIGTERM', async () => { await shutdown(); process.exit(0); });
+  const url = `http://localhost:${port}`;
 
-  const url = `http://localhost:${PORT}`;
-
-  await new Promise<void>((resolve) => {
-    server.listen(PORT, '127.0.0.1', () => {
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        reject(new Error(`[vync] Port ${port} is already in use`));
+      } else {
+        reject(err);
+      }
+    });
+    server.listen(port, '127.0.0.1', () => {
+      server.removeAllListeners('error');
       console.log(`[vync] Server running at ${url}`);
       console.log(`[vync] Watching: ${resolvedPath}`);
-      console.log(`[vync] WebSocket: ws://localhost:${PORT}/ws`);
+      console.log(`[vync] WebSocket: ws://localhost:${port}/ws`);
       resolve();
     });
   });
@@ -153,8 +181,19 @@ if (isDirectRun) {
     console.error('Usage: npx tsx src/server/server.ts <file.vync>');
     process.exit(1);
   }
-  startServer(path.resolve(filePath)).catch((err) => {
-    console.error('[vync] Fatal error:', err);
-    process.exit(1);
-  });
+  startServer(path.resolve(filePath))
+    .then(({ shutdown }) => {
+      process.on('SIGINT', async () => {
+        await shutdown();
+        process.exit(0);
+      });
+      process.on('SIGTERM', async () => {
+        await shutdown();
+        process.exit(0);
+      });
+    })
+    .catch((err) => {
+      console.error('[vync] Fatal error:', err.message);
+      process.exit(1);
+    });
 }

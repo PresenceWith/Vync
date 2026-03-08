@@ -48,6 +48,7 @@ export function createWsServer(server: Server, port: number) {
       });
     },
     close() {
+      wss.clients.forEach((client) => client.terminate());
       wss.close();
     },
   };
