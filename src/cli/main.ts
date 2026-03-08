@@ -5,7 +5,8 @@ const USAGE = `Usage: vync <command> [options]
 
 Commands:
   init <file>    Create an empty .vync canvas file
-  open <file>    Start server and open browser
+  open <file>    Start server (daemon) and open browser
+                 --foreground  Run in foreground (blocking)
   stop           Stop the running server
 
 Examples:
@@ -33,12 +34,13 @@ async function main() {
       break;
     }
     case 'open': {
-      const filePath = args[0];
+      const foreground = args.includes('--foreground');
+      const filePath = args.find((a) => !a.startsWith('--'));
       if (!filePath) {
-        console.error('Usage: vync open <file>');
+        console.error('Usage: vync open <file> [--foreground]');
         process.exit(1);
       }
-      await vyncOpen(filePath);
+      await vyncOpen(filePath, { foreground });
       break;
     }
     case 'stop': {

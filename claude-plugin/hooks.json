@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f \"$HOME/.vync/server.pid\" ] && kill $(cat \"$HOME/.vync/server.pid\") 2>/dev/null && rm -f \"$HOME/.vync/server.pid\"; exit 0"
+            "command": "[ -f \"$HOME/.vync/server.pid\" ] && { kill $(cat \"$HOME/.vync/server.pid\") 2>/dev/null; rm -f \"$HOME/.vync/server.pid\"; }; exit 0"
           }
         ]
       }

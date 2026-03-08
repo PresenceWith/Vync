@@ -9,7 +9,7 @@ Run the Vync CLI command: `vync $ARGUMENTS`
 ## Subcommands
 
 - `init <file>` — Create an empty .vync canvas file. Appends .vync extension if missing.
-- `open <file>` — Start the Vync server (port 3100) and open browser. Server runs in foreground.
+- `open <file>` — Start the Vync server (port 3100) as a background daemon and open browser. Returns immediately. Use `--foreground` to run in blocking mode.
 - `stop` — Stop the running Vync server.
 - `read <file>` — Read a .vync file and summarize its contents.
 
