@@ -1,4 +1,4 @@
-# Vync Sub-agent 번역 레이어 설계 (v2 — 리뷰 반영)
+# Vync Sub-agent 번역 레이어 설계 (v3 — Spike 결과 반영)
 
 > "생각이 보이는 대화" — Vync는 Claude Code와 유저 간의 이해도 동기화 채널(통역가)
 
@@ -143,6 +143,7 @@ name: vync-translator
 description: Vync 통역가 — prose ↔ .vync JSON 양방향 번역. 시각적 다이어그램 생성/읽기/수정.
 tools: Read, Write, Edit, Bash, Glob, Grep
 skills: vync-editing
+model: sonnet
 permissionMode: bypassPermissions
 ---
 
@@ -154,7 +155,7 @@ prose 구조를 .vync 파일(PlaitElement JSON)로 변환하거나,
 
 1. **vync-editing skill이 자동 로드됩니다.** 참조 문서(references/)를 활용하세요.
 2. **ID 생성**: `node ~/.claude/skills/vync-editing/scripts/generate-id.js <count>`
-3. **검증**: PostToolUse hook이 Write/Edit 시 자동으로 validate.js를 실행합니다.
+3. **검증**: Write/Edit 후 반드시 `node ~/.claude/skills/vync-editing/scripts/validate.js <file>` 실행. 에러 시 수정 후 재작성. (PostToolUse hook은 sub-agent에서 발동하지 않음)
 4. **서버 열기**: 파일 작성 후 `node "$VYNC_HOME/bin/vync.js" open <file>` 실행 (idempotent).
 
 ## 반환 포맷
@@ -174,7 +175,7 @@ prose 구조를 .vync 파일(PlaitElement JSON)로 변환하거나,
 2. ID 생성
 3. PlaitElement[] JSON 구성 (skill 규칙 준수)
 4. .vync 파일 Write (기존 파일 있으면 Read 후 merge)
-5. 검증 자동 수행. 실패 시 수정.
+5. `node validate.js <file>` 실행. 실패 시 수정 후 재작성.
 6. 서버 열기
 
 ### Read
@@ -189,7 +190,7 @@ prose 구조를 .vync 파일(PlaitElement JSON)로 변환하거나,
 3. 지시에 따라 노드 추가/수정/삭제
    - 구조적 변경(이동/재배치): Write로 전체 교체
    - 텍스트 수정/노드 추가: Edit로 부분 수정
-4. 검증 자동 수행. 실패 시 수정.
+4. `node validate.js <file>` 실행. 실패 시 수정 후 재작성.
 5. 서버 열기
 
 ## Skill 로드 Fallback
@@ -343,7 +344,7 @@ Agent({
 | 파일 | 사유 |
 |------|------|
 | `.claude-plugin/skills/vync-editing/` | Sub-agent가 그대로 사용 |
-| `.claude-plugin/hooks.json` | PostToolUse가 sub-agent에서도 글로벌 발동 → 변경 불필요 |
+| `.claude-plugin/hooks.json` | 메인 세션에서 여전히 작동. Sub-agent에서는 에이전트 시스템 프롬프트의 명시적 검증으로 대체 |
 | `tools/cli/open.ts` | Layer 1에서 이미 완료 |
 
 ## 8. Install Script 변경
@@ -372,15 +373,19 @@ done
 
 ## 9. 검증 계획
 
-### 구현 전 검증 (Spike — 10분)
+### 구현 전 검증 (Spike) — ✅ 완료 (2026-03-09)
 
-**반드시 구현 전에 수행.** Agent tool의 실제 동작을 확인:
+| # | 검증 대상 | 결과 | 비고 |
+|---|----------|------|------|
+| V1 | 커스텀 에이전트 인식 | ✅ PASS | `~/.claude/agents/`에 파일 존재 시 `subagent_type`으로 인식. **세션 시작 전 파일 존재 필요** |
+| V2 | Read/Write/Bash 도구 | ✅ PASS | 3개 도구 모두 정상 동작 |
+| V3 | Skill 자동 로드 | ✅ PASS | `skills: vync-editing` frontmatter가 커스텀 에이전트에서 작동. 파일 읽기 없이 skill 지식 보유 확인 |
+| V4 | PostToolUse hook | ❌ FAIL | Sub-agent에서 hook 미발동. **Workaround**: 시스템 프롬프트에 명시적 `validate.js` 호출 지시 (§4 반영) |
+| V5 | Prose 반환 + Context 보호 | ✅ PASS | Parent는 prose만 수신. JSON 결과는 격리됨 |
 
-1. 커스텀 sub-agent 파일(`~/.claude/agents/test.md`)을 만들고 Agent tool에서 인식되는지 확인
-2. Sub-agent 내에서 Read, Write, Bash 도구 사용 가능 여부 확인
-3. Sub-agent 내에서 Skill tool로 skill 로드 가능 여부 확인
-4. PostToolUse hook이 sub-agent의 Write/Edit에서 발동하는지 확인
-5. Sub-agent 결과가 메인 세션에 prose로 반환되는지 확인
+**판정: GO** — V1+V2+V3 PASS, V4 workaround 적용, V5 PASS
+
+**주요 학습**: 에이전트 디스커버리는 세션 시작 시에만 실행. 세션 중 생성된 에이전트 파일은 다음 세션까지 인식 안 됨 → install.sh가 사전 설치하므로 실사용에 문제 없음
 
 ### 기능 검증
 
@@ -437,6 +442,8 @@ Layer 2 완성 후 고려할 방향:
 | 메인 세션에서 파일경로 해결 | Sub-agent는 AskUser 불가 | sub-agent에서 파일 탐색 — 실패 위험 | v2 추가 |
 | 에러 반환 포맷 정의 | 실패 시 메인 context 오염 방지 | 자유 형식 에러 — 장황해질 위험 | v2 추가 |
 | Read depth limit (2단계) | 큰 파일의 prose 폭발 방지 | 전체 구조 반환 — context 소모 | v2 추가 |
+| model: sonnet | .vync 편집은 구조적 작업, Opus 불필요. 비용 ~5x 절감 | model: inherit (Opus) — 불필요한 비용 | v3 추가 |
+| 명시적 validate.js 호출 | PostToolUse hook이 sub-agent에서 미발동 (Spike V4) | hook 의존 — sub-agent에서 작동 안 함 | v3 추가 |
 
 ## 12. 의도적으로 제외한 항목 (리뷰 논의 후)
 
@@ -450,7 +457,7 @@ Layer 2 완성 후 고려할 방향:
 
 ## 13. 구현 순서
 
-1. **Spike (10분)**: Agent tool 실제 동작 검증 (§9 구현 전 검증)
+1. ~~**Spike (10분)**~~ ✅ 완료 — GO 판정 (2026-03-09)
 2. **에이전트 파일**: `.claude-plugin/agents/vync-translator.md` 생성
 3. **커맨드 통합**: `.claude-plugin/commands/vync.md` 재설계
 4. **deprecated 제거**: `vync-create.md` 삭제

@@ -7,7 +7,7 @@
 
 ## 현재 상태
 
-**Phase**: 6 완료 (Electron 데스크톱 앱)
+**Phase**: 7 완료 (Sub-agent 번역 레이어)
 
 ---
 
@@ -155,6 +155,28 @@
 
 ---
 
+## Phase 7: Sub-agent 번역 레이어
+
+**목표**: .vync JSON 편집을 전담 sub-agent에 위임하여 메인 세션의 context window를 보호한다.
+**의존**: Phase 4, Phase 6 완료
+**설계**: `docs/plans/2026-03-09-subagent-translator-design.md`
+
+- [x] 7.1 Spike 검증 — 커스텀 에이전트 인식, Skill 자동 로드, Prose 반환 검증 (GO 판정)
+- [x] 7.2 에이전트 파일 생성 — `.claude-plugin/agents/vync-translator.md`
+- [x] 7.3 커맨드 통합 — `/vync` 하나의 진입점으로 create/read/update 통합
+- [x] 7.4 deprecated 제거 — `/vync-create` 삭제
+- [x] 7.5 Install script 업데이트 — 에이전트 심볼릭 링크 + deprecated 정리
+- [x] 7.6 E2E 검증 — create → read → update 전체 흐름 (general-purpose 시뮬레이션)
+- [x] 7.7 문서 업데이트 — D-013 등록, ARCHITECTURE.md, PLAN.md, CLAUDE.md
+
+**완료 기준**:
+- [x] vync-translator sub-agent가 create/read/update 작업 수행 가능
+- [x] 메인 세션이 prose만 교환하여 context window 보호
+- [x] `/vync create` → sub-agent → 한 줄 요약 반환 흐름 동작
+- [x] Install script가 에이전트 파일을 `~/.claude/agents/`에 설치
+
+---
+
 ## 리스크
 
 | 리스크 | 영향 | 완화 방안 | 평가 시점 |
@@ -166,6 +188,7 @@
 | 대용량 .vync 파일에서 SHA-256 해싱 지연 | 낮음 | 일반 사용 시 파일 크기 소규모 예상. 병목 시 incremental hash 검토 | Phase 3 (구현 완료, 성능 문제 미발견) |
 | AI가 잘못된 PlaitElement JSON 생성 | **검증 완료** | JSON Schema 검증 + Skill 예시로 충분히 완화. Phase 5 E2E에서 Claude Code의 shape 변경/요소 추가 정상 반영 확인 → D-003 유지 | Phase 4 (Phase 5에서 검증) |
 | chokidar가 빠른 연속 변경 시 이벤트 누락 | 낮음 | 디바운싱으로 완화. 누락 시 polling fallback 검토 | Phase 3 (awaitWriteFinish 300ms 설정 완료) |
+| Agent tool 커스텀 에이전트 미작동 | **해소** | Spike 검증 완료: 커스텀 에이전트 인식(V1), Skill 자동 로드(V3), Prose 반환(V5) 모두 PASS. PostToolUse hook은 sub-agent에서 미발동(V4) → 명시적 validate.js 호출로 해결 | Phase 7 Spike (2026-03-09) |
 
 ---
 

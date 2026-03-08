@@ -21,6 +21,7 @@
 | D-010 | [MCP 서버: MVP 제외](#d-010) | 확정 | 2026-03-07 |
 | D-011 | [패키지 매니저: npm](#d-011) | **변경** | 2026-03-07 (변경: 2026-03-08) |
 | D-012 | [데스크톱 앱: Electron Thin Shell](#d-012) | 확정 | 2026-03-08 |
+| D-013 | [AI 편집 위임: Sub-agent 번역 레이어](#d-013) | 확정 | 2026-03-09 |
 
 ---
 
@@ -259,3 +260,30 @@ Electron main process
 **CLI 통합**: `vync open`이 Electron spawn, 폴백으로 기존 tsx daemon
 
 **재검토 조건**: 크로스 플랫폼(Windows/Linux) 지원이 필요할 때, 또는 Electron 번들 크기가 문제될 때
+
+---
+
+### D-013
+
+**AI 편집 위임: Sub-agent 번역 레이어 (vync-translator)**
+
+.vync JSON 편집을 전담 sub-agent에 위임하여 메인 세션의 context window를 보호한다.
+
+```
+메인 세션 (prose) ↔ vync-translator sub-agent ↔ .vync JSON ↔ 브라우저
+```
+
+- **커스텀 에이전트**: `.claude-plugin/agents/vync-translator.md` (model: sonnet, skills: vync-editing)
+- **커맨드 통합**: `/vync` 하나의 진입점 (init/open/stop: CLI, create/read/update: sub-agent)
+- **Prose 프로토콜**: 메인→Sub: 구조화된 트리 prose, Sub→메인: 한 줄 요약
+- **Context 절감**: 2,000~5,000 → ~630 토큰 (3~8x)
+
+| 대안 | 기각 사유 |
+|------|----------|
+| 메인 세션에서 직접 편집 (기존) | context window 오염, 대화 흐름 단절 |
+| general-purpose sub-agent + 반복 프롬프트 | Skill 자동 로드 불가, 매번 프롬프트 전달 비용 |
+| MCP 서버 (구조화 API) | MVP 범위 초과, 별도 프로세스 관리 필요 (→ D-010) |
+
+**설계 문서**: `docs/plans/2026-03-09-subagent-translator-design.md`
+
+**재검토 조건**: Claude Code의 에이전트 시스템이 변경되어 커스텀 에이전트 방식이 더 이상 유효하지 않을 때

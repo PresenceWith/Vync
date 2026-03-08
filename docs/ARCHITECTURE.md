@@ -314,7 +314,8 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │   │       ├── references/        # 상세 가이드 (mindmap, geometry, arrow-line, coordinates)
 │   │       ├── scripts/           # validate.js, generate-id.js
 │   │       └── assets/            # schema.json, 예시 .vync 파일
-│   └── commands/                  # /vync, /vync-create 슬래시 커맨드
+│   ├── agents/                    # 커스텀 sub-agent (vync-translator)   [VYNC 추가: Phase 7]
+│   └── commands/                  # /vync 슬래시 커맨드 (create/read/update 통합)
 ├── docs/                          # 프로젝트 문서
 ├── examples/                      # .vync 예시 파일                [VYNC 추가]
 ├── electron-builder.yml           # Electron 패키징 설정 (macOS DMG)  [VYNC 추가]
