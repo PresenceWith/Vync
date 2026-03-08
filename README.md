@@ -111,12 +111,12 @@ Vync/
 ├── packages/
 │   ├── drawnix/             # Whiteboard UI library
 │   ├── react-board/         # Plait ↔ React bridge
-│   └── react-text/          # Text rendering (Slate)
-├── src/
+│   ├── react-text/          # Text rendering (Slate)
+│   └── shared/              # Shared types and utilities (@vync/shared)
+├── tools/
 │   ├── server/              # Express + Vite middleware + WebSocket
 │   ├── cli/                 # CLI commands (init, open, stop)
-│   ├── electron/            # Electron main + preload
-│   └── shared/              # Shared types and utilities
+│   └── electron/            # Electron main + preload
 ├── .claude-plugin/          # Claude Code integration (marketplace plugin)
 │   ├── plugin.json          # Plugin metadata
 │   ├── skills/vync-editing/ # AI editing skill

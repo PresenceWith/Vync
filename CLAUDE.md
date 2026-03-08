@@ -6,12 +6,12 @@ A local-first visual planning tool. `.vync` JSON files are the source of truth, 
 
 ## Project Structure
 
-- **Monorepo**: npm + nx (`apps/web`, `packages/drawnix`, `packages/react-board`, `packages/react-text`)
-- **Server**: `src/server/server.ts` — Express + Vite middleware mode + WebSocket (:3100)
-- **CLI**: `bin/vync.js` → `src/cli/main.ts` (init, open, stop)
-- **Electron**: `src/electron/main.ts` (thin shell, in-process server)
-- **Shared types**: `src/shared/types.ts` — `VyncFile<T>`, `WsMessage<T>`
-- **Path alias**: `@vync/shared` → `src/shared/types.ts`
+- **Monorepo**: npm + nx (`apps/web`, `packages/drawnix`, `packages/react-board`, `packages/react-text`, `packages/shared`)
+- **Server**: `tools/server/server.ts` — Express + Vite middleware mode + WebSocket (:3100)
+- **CLI**: `bin/vync.js` → `tools/cli/main.ts` (init, open, stop)
+- **Electron**: `tools/electron/main.ts` (thin shell, in-process server)
+- **Shared types**: `packages/shared/src/types.ts` — `VyncFile<T>`, `WsMessage<T>`
+- **Path alias**: `@vync/shared` → `packages/shared/src/index.ts`
 
 ## Key Commands
 
