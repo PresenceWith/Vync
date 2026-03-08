@@ -8,6 +8,7 @@ describe('vyncInit', () => {
   const tmpDir = path.join(os.tmpdir(), 'vync-test-init');
 
   afterEach(async () => {
+    delete process.env.VYNC_CALLER_CWD;
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
@@ -38,7 +39,38 @@ describe('vyncInit', () => {
 
     await vyncInit(filePath);
 
-    const exists = await fs.access(path.join(tmpDir, 'test.vync')).then(() => true).catch(() => false);
+    const exists = await fs
+      .access(path.join(tmpDir, 'test.vync'))
+      .then(() => true)
+      .catch(() => false);
+    expect(exists).toBe(true);
+  });
+
+  it('creates file in .vync/ subdirectory for bare filename', async () => {
+    await fs.mkdir(tmpDir, { recursive: true });
+    process.env.VYNC_CALLER_CWD = tmpDir;
+
+    await vyncInit('myplan');
+
+    const expected = path.join(tmpDir, '.vync', 'myplan.vync');
+    const exists = await fs
+      .access(expected)
+      .then(() => true)
+      .catch(() => false);
+    expect(exists).toBe(true);
+  });
+
+  it('resolves explicit relative path against caller CWD', async () => {
+    await fs.mkdir(tmpDir, { recursive: true });
+    process.env.VYNC_CALLER_CWD = tmpDir;
+
+    await vyncInit('./myplan');
+
+    const expected = path.join(tmpDir, 'myplan.vync');
+    const exists = await fs
+      .access(expected)
+      .then(() => true)
+      .catch(() => false);
     expect(exists).toBe(true);
   });
 });
