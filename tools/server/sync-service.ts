@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { sha256 } from '../shared/hash.js';
-import type { VyncFile } from '../shared/types.js';
+import { sha256, type VyncFile } from '@vync/shared';
 
 export function createSyncService(filePath: string) {
   let lastHash: string | null = null;
