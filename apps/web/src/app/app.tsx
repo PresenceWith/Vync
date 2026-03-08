@@ -39,7 +39,7 @@ export function App() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isRemoteUpdateRef = useRef(false);
+  const remoteUpdateUntilRef = useRef(0);
   const syncModeRef = useRef(false);
 
   // Load initial data: try API first, fall back to localforage
@@ -98,7 +98,9 @@ export function App() {
         try {
           const msg = JSON.parse(event.data) as WsMessage<PlaitElement>;
           if (msg.type === 'file-changed' && msg.data) {
-            isRemoteUpdateRef.current = true;
+            // Suppress echo for 500ms: setValue may trigger multiple onChange calls
+            // (children + fitViewport), so a boolean flag is insufficient
+            remoteUpdateUntilRef.current = Date.now() + 500;
             setValue({
               children: msg.data.elements || [],
               viewport: toPlaitViewport(msg.data.viewport),
@@ -143,8 +145,7 @@ export function App() {
     }
 
     // Skip sync for remote updates (from WebSocket)
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false;
+    if (Date.now() < remoteUpdateUntilRef.current) {
       return;
     }
 

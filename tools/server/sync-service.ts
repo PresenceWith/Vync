@@ -6,6 +6,7 @@ export function createSyncService(filePath: string) {
   let lastHash: string | null = null;
   let isWriting = false;
   let lastValidContent: string | null = null;
+  let writeQueue: Promise<void> = Promise.resolve();
 
   // Initialize hash from current file
   async function init(): Promise<VyncFile> {
@@ -16,29 +17,36 @@ export function createSyncService(filePath: string) {
     return data;
   }
 
-  // Atomic write: tmp + rename, with echo prevention
+  // Atomic write: tmp + rename, with echo prevention and write serialization
   async function writeFile(data: VyncFile): Promise<void> {
-    const content = JSON.stringify(data, null, 2);
-    const hash = sha256(content);
+    const doWrite = async () => {
+      const content = JSON.stringify(data, null, 2);
+      const hash = sha256(content);
 
-    // Skip if content hasn't changed
-    if (hash === lastHash) return;
+      // Skip if content hasn't changed
+      if (hash === lastHash) return;
 
-    const dir = path.dirname(filePath);
-    const tmpPath = path.join(dir, `.${path.basename(filePath)}.tmp`);
+      const dir = path.dirname(filePath);
+      const tmpPath = path.join(dir, `.${path.basename(filePath)}.tmp`);
 
-    isWriting = true;
-    try {
-      await fs.writeFile(tmpPath, content, 'utf-8');
-      await fs.rename(tmpPath, filePath);
-      lastHash = hash;
-      lastValidContent = content;
-    } finally {
-      // Small delay to ensure chokidar picks up the write before we clear the flag
-      setTimeout(() => {
-        isWriting = false;
-      }, 100);
-    }
+      isWriting = true;
+      try {
+        await fs.writeFile(tmpPath, content, 'utf-8');
+        await fs.rename(tmpPath, filePath);
+        lastHash = hash;
+        lastValidContent = content;
+      } catch (err) {
+        await fs.unlink(tmpPath).catch(() => {});
+        throw err;
+      } finally {
+        // Delay exceeds chokidar's 300ms stabilityThreshold to prevent echo
+        setTimeout(() => {
+          isWriting = false;
+        }, 500);
+      }
+    };
+    writeQueue = writeQueue.then(doWrite, doWrite);
+    return writeQueue;
   }
 
   // Called by file watcher: returns parsed data if it's an external change, null otherwise
@@ -51,7 +59,9 @@ export function createSyncService(filePath: string) {
     try {
       data = JSON.parse(content) as VyncFile;
     } catch {
-      console.error('[vync] Invalid JSON in changed file, keeping previous state');
+      console.error(
+        '[vync] Invalid JSON in changed file, keeping previous state'
+      );
       return null;
     }
 
@@ -70,7 +80,6 @@ export function createSyncService(filePath: string) {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
       const data = JSON.parse(content) as VyncFile;
-      lastHash = sha256(content);
       lastValidContent = content;
       return data;
     } catch {
