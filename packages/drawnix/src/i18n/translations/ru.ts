@@ -74,7 +74,8 @@ const ruTranslations: Translations = {
   'language.russian': 'Русский',
   'language.arabic': 'عربي',
   'language.vietnamese': 'Tiếng Việt',
-  
+  'language.korean': '한국어',
+
   // Menu items
   'menu.open': 'Открыть',
   'menu.saveFile': 'Сохранить',

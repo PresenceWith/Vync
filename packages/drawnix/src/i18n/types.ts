@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 
 // Define supported languages
-export type Language = 'zh' | 'en' | 'ru' | 'ar' | 'vi';
+export type Language = 'zh' | 'en' | 'ru' | 'ar' | 'vi' | 'ko';
 
 // Define translation keys and their corresponding values
 export interface Translations {
@@ -78,6 +78,7 @@ export interface Translations {
   'language.russian': string;
   'language.arabic': string;
   'language.vietnamese': string;
+  'language.korean': string;
 
   // Menu items
   'menu.open': string;
