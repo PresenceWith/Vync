@@ -41,10 +41,10 @@ export PATH="/path/to/Vync/bin:$PATH"
 
 ```bash
 # Create a new canvas
-vync init my-plan.vync
+vync init my-plan        # creates .vync/my-plan.vync
 
 # Open in browser (starts server on :3100)
-vync open my-plan.vync
+vync open my-plan
 
 # Stop the server
 vync stop

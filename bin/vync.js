@@ -10,7 +10,11 @@ try {
   execFileSync(tsx, [main, ...process.argv.slice(2)], {
     stdio: 'inherit',
     cwd: projectRoot,
-    env: { ...process.env, VYNC_HOME: projectRoot },
+    env: {
+      ...process.env,
+      VYNC_HOME: projectRoot,
+      VYNC_CALLER_CWD: process.cwd(),
+    },
   });
 } catch (e) {
   process.exit(e.status || 1);

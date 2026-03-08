@@ -11,7 +11,8 @@
     "dev:server": "tsx tools/server/server.ts",
     "dev:desktop": "npx esbuild tools/electron/main.ts --bundle --platform=node --outdir=dist/electron --external:electron --packages=external --alias:@vync/shared=./packages/shared/src/index.ts --sourcemap && electron dist/electron/main.js",
     "build:desktop": "nx build web && npx esbuild tools/electron/main.ts tools/electron/preload.ts --bundle --platform=node --outdir=dist/electron --external:electron --packages=external --alias:@vync/shared=./packages/shared/src/index.ts",
-    "package:desktop": "npm run build:desktop && electron-builder"
+    "package:desktop": "npm run build:desktop && electron-builder",
+    "postinstall": "bash .claude-plugin/install.sh 2>/dev/null || true"
   },
   "main": "dist/electron/main.js",
   "private": true,

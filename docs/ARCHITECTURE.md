@@ -297,6 +297,7 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │       ├── main.ts                # CLI 진입점 (subcommand 라우팅)
 │       ├── init.ts                # vync init: 빈 .vync 파일 생성
 │       ├── open.ts                # vync open/stop: 서버 시작/종료 + PID 관리
+│       ├── resolve.ts             # resolveVyncPath(): 경로 해석 (bare name → .vync/ 하위)
 │       └── __tests__/
 │           └── init.test.ts       # init 유닛 테스트
 ├── bin/
@@ -383,30 +384,49 @@ T3: 서버가 hash 저장 완료
 
 ### 6.6 초기화/종료 흐름
 
-**서버 시작 (`vync open <file>`)** — Electron 우선, 폴백으로 tsx daemon:
+**PID 파일 포맷** (`~/.vync/server.pid`):
 ```
-[Electron 모드 — 기본 (dist/electron/main.js 존재 시)]
-1. 파일 존재 확인 → 없으면 에러 메시지 + 종료
-2. 기존 서버 PID 확인 → 이미 실행 중이면 에러 + 종료
-3. Electron 바이너리 + dist/electron/main.js 존재 확인
-4. electron dist/electron/main.js <file>을 detached spawn
-5. 300ms 간격 폴링으로 서버 준비 대기 (최대 10초)
-6. Electron 앱이 in-process로 서버 실행 + BrowserWindow 열기
-
-[tsx 데몬 모드 — 폴백 (Electron 빌드 없을 때)]
-1~2 동일
-3. tsx로 server.ts를 detached 자식 프로세스로 spawn
-4. 폴링 대기 → 브라우저 열기 → CLI 즉시 종료
-
-[포그라운드 모드 — --foreground]
-1~2 동일
-3. 현재 프로세스 내에서 startServer() 직접 호출 (블로킹)
+<pid>
+<mode>        # daemon | electron | foreground
+<file-path>   # 서빙 중인 .vync 파일 절대경로
 ```
 
-**서버 종료 (Ctrl+C / SIGTERM)**:
+**경로 해석 (`resolveVyncPath`)** — bare filename은 `.vync/` 하위 디렉터리:
+```
+vync init myplan         → CWD/.vync/myplan.vync  (bare filename)
+vync init ./myplan       → CWD/myplan.vync        (명시적 상대경로)
+vync init /tmp/test      → /tmp/test.vync         (절대경로)
+```
+`bin/vync.js`가 `VYNC_CALLER_CWD` 환경변수로 호출자의 원래 CWD를 전달.
+
+**서버 시작 (`vync open <file>`)** — 스마트 재시작 + Electron 우선, 폴백으로 tsx daemon:
+```
+1. 경로 해석 (resolveVyncPath) → 파일 존재 확인 → 없으면 에러 메시지 + 종료
+2. 기존 서버 상태 확인 (3-state 감지):
+   - PID 파일 읽기 → 프로세스 존재 확인 (kill 0) → HTTP 헬스체크 (HEAD /api/sync)
+   - none: 서버 없음 → 정상 시작
+   - same-file: 같은 파일 서빙 중 → 브라우저만 열기 (Electron이면 로그만 출력)
+   - different-file: 다른 파일 서빙 중 → 자동 stop → 새 파일로 시작
+3. [Electron 모드 — 기본] electron dist/electron/main.js <file>을 detached spawn
+   [tsx 데몬 모드 — 폴백] tsx로 server.ts를 detached 자식 프로세스로 spawn
+   [포그라운드 모드 — --foreground] 현재 프로세스 내에서 startServer() 직접 호출
+4. 300ms 간격 폴링으로 서버 준비 대기 (최대 10초)
+5. PID 파일에 ServerInfo 기록 (pid/mode/filePath)
+```
+
+**서버 종료 (`vync stop` / Ctrl+C / SIGTERM)**:
+```
+1. PID 파일에서 ServerInfo 읽기
+2. SIGTERM 전송 → 프로세스 종료 대기 (최대 5초)
+3. 타임아웃 시 SIGKILL 에스컬레이션
+4. 포트 해제 확인 (net.createConnection 프로브, 최대 2초)
+5. PID 파일 삭제
+```
+
+**서버 내부 종료 (SIGTERM 수신 시)**:
 ```
 1. 미완료 쓰기 작업 완료 대기 (최대 3초 타임아웃)
-2. WebSocket 연결 정리 (close 프레임 전송)
+2. WebSocket 연결 정리 (client.terminate())
 3. chokidar 감시 중지
 4. HTTP 서버 종료
 5. 프로세스 종료
