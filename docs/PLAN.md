@@ -65,7 +65,7 @@
 - [x] 3.1 웹 UI onChange → 디바운싱(300ms) → PUT /api/sync → 파일 저장
 - [x] 3.2 localforage 저장소 → API Route 호출로 교체 (syncMode 시 API, 아닐 때 localforage fallback)
 - [x] 3.3 에코 방지 메커니즘 구현 (content hash)
-  - [x] 3.3.1 SHA-256 해시 유틸리티 (src/shared/hash.ts)
+  - [x] 3.3.1 SHA-256 해시 유틸리티 (packages/shared/src/hash.ts)
   - [x] 3.3.2 쓰기 시 해시 저장 로직
   - [x] 3.3.3 chokidar 감지 시 해시 비교 로직
   - [x] 3.3.4 Race condition 처리 (isWriting 플래그, → ARCHITECTURE.md §6.1)
@@ -88,7 +88,7 @@
 **설계**: `docs/plans/2026-03-07-phase4-claude-plugin-design.md`
 **구현**: `docs/plans/2026-03-07-phase4-implementation.md`
 
-- [x] 4.1 `vync init <file>` — 빈 캔버스 .vync 파일 생성 (src/cli/init.ts + tests)
+- [x] 4.1 `vync init <file>` — 빈 캔버스 .vync 파일 생성 (tools/cli/init.ts + tests)
 - [x] 4.2 `vync open <file>` + `vync stop` — server.ts 리팩토링 (startServer export, VYNC_HOME) + bin/vync.js CLI 진입점 + PID 관리 (~/.vync/server.pid)
 - [x] 4.3 Claude Code Skill (vync-editing) — SKILL.md + references (mindmap, geometry, arrow-line, coordinates)
 - [x] 4.4 .vync.schema.json + validate.js + generate-id.js — JSON Schema + 자동 검증 스크립트

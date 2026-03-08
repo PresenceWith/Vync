@@ -299,7 +299,8 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │       ├── open.ts                # vync open/stop: 서버 시작/종료 + PID 관리
 │       ├── resolve.ts             # resolveVyncPath(): 경로 해석 (bare name → .vync/ 하위)
 │       └── __tests__/
-│           └── init.test.ts       # init 유닛 테스트
+│           ├── init.test.ts       # init 유닛 테스트
+│           └── open.test.ts       # smart restart + vyncStop 유닛 테스트
 ├── bin/
 │   └── vync.js                    # CLI 진입점 (CommonJS, tsx spawn) [VYNC 추가]
 ├── .claude-plugin/                # Claude Code 플러그인 (marketplace 표준) [VYNC 추가]
