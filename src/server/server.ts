@@ -4,7 +4,7 @@ import express from 'express';
 import { createFileWatcher } from './file-watcher.js';
 import { createWsServer } from './ws-handler.js';
 import { createSyncService } from './sync-service.js';
-import type { VyncFile } from '../shared/types.js';
+import type { VyncFile } from '@vync/shared';
 
 const DEFAULT_PORT = 3100;
 
