@@ -299,7 +299,8 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │       └── hash.ts                # content hash 유틸리티 (SHA-256)
 ├── bin/
 │   └── vync.js                    # CLI 진입점 (CommonJS, tsx spawn) [VYNC 추가]
-├── claude-plugin/                 # Claude Code 플러그인 소스       [VYNC 추가]
+├── .claude-plugin/                # Claude Code 플러그인 (marketplace 표준) [VYNC 추가]
+│   ├── plugin.json                # 플러그인 메타데이터
 │   ├── install.sh                 # ~/.claude/에 심볼릭 링크 + 설정 머지
 │   ├── uninstall.sh               # 정리
 │   ├── hooks.json                 # PostToolUse + SessionEnd 설정

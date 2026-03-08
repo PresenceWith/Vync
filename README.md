@@ -1,145 +1,154 @@
-<p align="center">
-  <picture style="width: 320px">
-    <source media="(prefers-color-scheme: light)" srcset="https://github.com/plait-board/drawnix/blob/develop/apps/web/public/logo/logo_drawnix_h.svg?raw=true" />
-    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/plait-board/drawnix/blob/develop/apps/web/public/logo/logo_drawnix_h_dark.svg?raw=true" />
-    <img src="https://github.com/plait-board/drawnix/blob/develop/apps/web/public/logo/logo_drawnix_h.svg?raw=true" width="360" alt="Drawnix logo and name" />
-  </picture>
-</p>
-<div align="center">
-  <h2>
-    开源白板工具（SaaS），一体化白板，包含思维导图、流程图、自由画等
-  <br />
-  </h2>
-</div>
+# Vync
 
-<div align="center">
-  <figure>
-    <a target="_blank" rel="noopener">
-      <img src="https://github.com/plait-board/drawnix/blob/develop/apps/web/public/product_showcase/case-2.png" alt="Product showcase" width="80%" />
-    </a>
-    <figcaption>
-      <p align="center">
-        All in one 白板，思维导图、流程图、自由画等
-      </p>
-    </figcaption>
-  </figure>
-  <a href="https://hellogithub.com/repository/plait-board/drawnix" target="_blank">
-    <picture style="width: 250">
-      <source media="(prefers-color-scheme: light)" srcset="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=4dcea807fab7468a962c153b07ae4e4e&claim_uid=zmFSY5k8EuZri43&theme=neutral" />
-      <source media="(prefers-color-scheme: dark)" srcset="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=4dcea807fab7468a962c153b07ae4e4e&claim_uid=zmFSY5k8EuZri43&theme=dark" />
-      <img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=4dcea807fab7468a962c153b07ae4e4e&claim_uid=zmFSY5k8EuZri43&theme=neutral" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54"/>
-    </picture>
-  </a>
+**Visual Sync** — A local-first visual planning tool with real-time bidirectional sync.
 
-  <br />
+Your `.vync` file is the single source of truth. Edit it from the web UI, desktop app, Claude Code, or any text editor — changes sync instantly everywhere.
 
-  <a href="https://trendshift.io/repositories/13979" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13979" alt="plait-board%2Fdrawnix | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-</div>
+## Features
 
-[*English README*](https://github.com/plait-board/drawnix/blob/develop/README_en.md)
+- **Local-first**: `.vync` JSON files live on your filesystem. No cloud, no account required.
+- **Real-time sync**: File changes (from any editor) reflect in the UI instantly via WebSocket + chokidar.
+- **AI-native editing**: Claude Code can create and edit diagrams directly via the plugin.
+- **Mind maps, flowcharts, diagrams**: Built on the [Plait](https://github.com/worktile/plait) framework.
+- **Electron desktop app**: Native macOS app with file associations (`.vync`).
+- **CLI-first workflow**: `vync init`, `vync open`, `vync stop`.
+- **Infinite canvas**: Zoom, scroll, pan. Auto-save. Undo/redo.
 
-## 特性
+## Quick Start
 
-- 💯 免费 + 开源
-- ⚒️ 思维导图、流程图
-- 🖌 画笔
-- 😀 插入图片
-- 🚀 基于插件机制
-- 🖼️ 📃 导出为 PNG, JSON(`.drawnix`)
-- 💾 自动保存（浏览器缓存）
-- ⚡ 编辑特性：撤销、重做、复制、粘贴等
-- 🌌 无限画布：缩放、滚动
-- 🎨 主题模式
-- 📱 移动设备适配
-- 📈 支持 mermaid 语法转流程图
-- ✨ 支持 markdown 文本转思维导图（新支持 🔥🔥🔥）
+### Prerequisites
 
+- Node.js 18+
+- npm 9+
 
-## 关于名称
+### Install
 
-***Drawnix***  ，源于绘画(  ***Draw***  )与凤凰(  ***Phoenix***  )的灵感交织。
-
-凤凰象征着生生不息的创造力，而 *Draw* 代表着人类最原始的表达方式。在这里，每一次创作都是一次艺术的涅槃，每一笔绘画都是灵感的重生。
-
-创意如同凤凰，浴火方能重生，而  ***Drawnix***  要做技术与创意之火的守护者。
-
-*Draw Beyond, Rise Above.*
-
-
-## 与 Plait 画图框架
-
-*Drawnix* 的定位是一个开箱即用、开源、免费的工具产品，它的底层是 *Plait* 框架，*Plait* 是我司开源的一款画图框架，代表着公司在知识库产品([PingCode Wiki](https://pingcode.com/product/wiki?utm_source=drawnix))上的重要技术沉淀。
-
-
-Drawnix 是插件架构，与前面说到开源工具比技术架构更复杂一些，但是插件架构也有优势，比如能够支持多种 UI 框架（*Angular、React*），能够集成不同富文本框架（当前仅支持 *Slate* 框架），在开发上可以很好的实现业务的分层，开发各种细粒度的可复用插件，可以扩展更多的画板的应用场景。
-
-
-## 仓储结构
-
-```
-drawnix/
-├── apps/
-│   ├── web                   # drawnix.com
-│   │    └── index.html       # HTML
-├── dist/                     # 构建产物
-├── packages/
-│   └── drawnix/              # 白板应用
-│   └── react-board/          # 白板 React 视图层
-│   └── react-text/           # 文本渲染模块
-├── package.json
-├── ...
-└── README.md
-└── README_en.md
-
-```
-
-## 应用
-
-[*https://drawnix.com*](https://drawnix.com) 是 *drawnix* 的最小化应用。
-
-近期会高频迭代 drawnix.com，直到发布 *Dawn（破晓）* 版本。
-
-
-## 开发
-
-```
+```bash
+git clone https://github.com/PresenceWith/Vync.git
+cd Vync
 npm install
-
-npm run start
 ```
 
-## Docker
+### Add CLI to PATH
+
+Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
+
+```bash
+export PATH="/path/to/Vync/bin:$PATH"
+```
+
+### Usage
+
+```bash
+# Create a new canvas
+vync init my-plan.vync
+
+# Open in browser (starts server on :3100)
+vync open my-plan.vync
+
+# Stop the server
+vync stop
+```
+
+### Development
+
+```bash
+# Dev server (Vite + Express + WebSocket on :3100)
+npm run dev:server
+
+# Electron desktop (dev mode)
+npm run dev:desktop
+
+# Build web
+npm run build:web
+
+# Package desktop app (macOS DMG)
+npm run package:desktop
+```
+
+## Claude Code Plugin
+
+Vync includes a Claude Code plugin that lets AI create and edit `.vync` diagrams.
+
+### Plugin Install
+
+**Option A: Marketplace (recommended)**
+
+In Claude Code, run:
+```
+/plugin install vync
+```
+
+Or add the marketplace source:
+```
+/plugin marketplace add PresenceWith/Vync
+```
+
+**Option B: Manual install**
+
+```bash
+bash .claude-plugin/install.sh
+```
+
+This installs:
+- **Skills**: `vync-editing` — guides Claude Code to correctly edit `.vync` files
+- **Commands**: `/vync` (init/open/stop/read), `/vync-create` (create diagrams from text)
+- **Hooks**: Auto-validation on `.vync` file edits, server cleanup on session end
+
+### Example: AI-generated diagram
 
 ```
-docker pull pubuzhixing/drawnix:latest
+/vync-create mindmap Project planning for Q2 launch
 ```
 
-## 依赖
+Claude Code will generate a valid `.vync` mindmap file following the PlaitElement schema.
 
-- [plait](https://github.com/worktile/plait) - 开源画图框架
-- [slate](https://github.com/ianstormtaylor/slate)  - 富文本编辑器框架
-- [floating-ui](https://github.com/floating-ui/floating-ui)  - 一个超级好用的创建弹出层基础库
+## Architecture
 
+```
+Vync/
+├── apps/web/               # Vite SPA (React 19 + Plait)
+├── packages/
+│   ├── drawnix/             # Whiteboard UI library
+│   ├── react-board/         # Plait ↔ React bridge
+│   └── react-text/          # Text rendering (Slate)
+├── src/
+│   ├── server/              # Express + Vite middleware + WebSocket
+│   ├── cli/                 # CLI commands (init, open, stop)
+│   ├── electron/            # Electron main + preload
+│   └── shared/              # Shared types and utilities
+├── .claude-plugin/          # Claude Code integration (marketplace plugin)
+│   ├── plugin.json          # Plugin metadata
+│   ├── skills/vync-editing/ # AI editing skill
+│   ├── commands/            # Slash commands
+│   └── hooks.json           # PostToolUse + SessionEnd hooks
+└── bin/vync.js              # CLI entry point
+```
 
+### Data Flow
 
-## 贡献
+```
+.vync file ←→ chokidar (watch) ←→ Server ←→ WebSocket ←→ Browser UI
+                                     ↕
+                              Claude Code / vim / any editor
+```
 
-欢迎任何形式的贡献：
+### .vync File Format
 
-- 提 Bug
+```json
+{
+  "version": 1,
+  "viewport": { "zoom": 1, "x": 0, "y": 0 },
+  "elements": [
+    { "id": "AbCdE", "type": "mindmap", "data": { ... }, "children": [ ... ] }
+  ]
+}
+```
 
-- 贡献代码
+## Acknowledgments
 
-## 感谢支持
-
-特别感谢公司对开源项目的大力支持，也感谢为本项目贡献代码、提供建议的朋友。
-
-<p align="left">
-  <a href="https://pingcode.com?utm_source=drawnix" target="_blank">
-      <img src="https://cdn-aliyun.pingcode.com/static/site/img/pingcode-logo.4267e7b.svg" width="120" alt="PingCode" />
-  </a>
-</p>
+Vync is built on top of [Drawnix](https://github.com/plait-board/drawnix), an open-source whiteboard tool powered by the [Plait](https://github.com/worktile/plait) framework. Thanks to the Drawnix and Plait teams for their foundational work.
 
 ## License
 
-[MIT License](https://github.com/plait-board/drawnix/blob/master/LICENSE)  
+[MIT](LICENSE)

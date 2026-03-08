@@ -40,3 +40,19 @@ Thumbs.db
 
 .nx/cache
 .nx/workspace-data
+
+# Vync
+*.vync
+.vync/
+
+# Electron
+dist/packages/
+dist/electron/
+
+# Server
+*.pid
+server.log
+
+# Environment
+.env
+.env.*
