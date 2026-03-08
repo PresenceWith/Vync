@@ -31,7 +31,7 @@ interface PlaitGeometry {
 | `ellipse` | Ellipse/Circle |
 | `diamond` | Diamond/Rhombus |
 | `parallelogram` | Parallelogram |
-| `round-rectangle` | Rounded rectangle |
+| `roundRectangle` | Rounded rectangle |
 | `text` | Text-only (no border) |
 | `triangle` | Triangle |
 | `cross` | Cross/Plus |
@@ -41,6 +41,13 @@ interface PlaitGeometry {
 | `hexagon` | Hexagon |
 | `octagon` | Octagon |
 | `trapezoid` | Trapezoid |
+| `leftArrow` | Left arrow |
+| `rightArrow` | Right arrow |
+| `pentagonArrow` | Pentagon arrow |
+| `processArrow` | Process arrow |
+| `twoWayArrow` | Bidirectional arrow |
+| `comment` | Comment |
+| `roundComment` | Round comment |
 
 ### Flowchart Symbols
 | Shape | Description |
@@ -48,24 +55,27 @@ interface PlaitGeometry {
 | `process` | Process (rectangle) |
 | `decision` | Decision (diamond) |
 | `data` | Data (parallelogram) |
+| `connector` | Connector |
 | `terminal` | Terminal (rounded) |
-| `predefined-process` | Predefined process |
+| `predefinedProcess` | Predefined process |
 | `document` | Document |
-| `multi-document` | Multiple documents |
-| `manual-input` | Manual input |
+| `multiDocument` | Multiple documents |
+| `manualInput` | Manual input |
 | `preparation` | Preparation (hexagon) |
-| `stored-data` | Stored data |
-| `internal-storage` | Internal storage |
-| `manual-loop` | Manual loop |
+| `storedData` | Stored data |
+| `internalStorage` | Internal storage |
+| `manualLoop` | Manual loop |
 | `delay` | Delay |
 | `or` | OR |
-| `summing-junction` | Summing junction |
+| `summingJunction` | Summing junction |
 | `display` | Display |
-| `off-page` | Off-page connector |
+| `offPage` | Off-page connector |
 | `merge` | Merge |
-| `note-curly-left` | Note (curly left) |
-| `note-curly-right` | Note (curly right) |
-| `note-square` | Note (square) |
+| `noteCurlyLeft` | Note (curly left) |
+| `noteCurlyRight` | Note (curly right) |
+| `noteSquare` | Note (square) |
+| `database` | Database |
+| `hardDisk` | Hard disk |
 
 ## Bounding Box Rules
 
