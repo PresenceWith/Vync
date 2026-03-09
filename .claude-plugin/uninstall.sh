@@ -2,22 +2,41 @@
 set -euo pipefail
 
 CLAUDE_DIR="$HOME/.claude"
+SETTINGS="$CLAUDE_DIR/settings.json"
 
 echo "[vync] Uninstalling Claude Code plugin..."
 
-# 1. Remove symlinks
+# 1. Remove legacy symlinks
 rm -f "$CLAUDE_DIR/skills/vync-editing"
 rm -f "$CLAUDE_DIR/commands/vync.md"
 rm -f "$CLAUDE_DIR/commands/vync-create.md"
 rm -f "$CLAUDE_DIR/agents/vync-translator.md"
-echo "  [ok] Removed skills, commands, and agents"
 
-# 2. Remove hooks from settings.json
-SETTINGS="$CLAUDE_DIR/settings.json"
+# 2. Clean settings.json
 if [ -f "$SETTINGS" ]; then
+  cp "$SETTINGS" "$SETTINGS.bak"
   node -e "
   const fs = require('fs');
   const settings = JSON.parse(fs.readFileSync('$SETTINGS', 'utf-8'));
+
+  // Remove marketplace registration
+  if (settings.extraKnownMarketplaces) {
+    delete settings.extraKnownMarketplaces['PresenceWith-Vync'];
+    if (Object.keys(settings.extraKnownMarketplaces).length === 0) delete settings.extraKnownMarketplaces;
+  }
+
+  // Remove enabled plugin
+  if (settings.enabledPlugins) {
+    delete settings.enabledPlugins['vync@PresenceWith-Vync'];
+  }
+
+  // Remove VYNC_HOME
+  if (settings.env) {
+    delete settings.env.VYNC_HOME;
+    if (Object.keys(settings.env).length === 0) delete settings.env;
+  }
+
+  // Remove legacy hooks
   if (settings.hooks) {
     for (const event of Object.keys(settings.hooks)) {
       settings.hooks[event] = settings.hooks[event].filter(
@@ -27,14 +46,15 @@ if [ -f "$SETTINGS" ]; then
     }
     if (Object.keys(settings.hooks).length === 0) delete settings.hooks;
   }
-  if (settings.env) {
-    delete settings.env.VYNC_HOME;
-    if (Object.keys(settings.env).length === 0) delete settings.env;
-  }
+
   fs.writeFileSync('$SETTINGS', JSON.stringify(settings, null, 2));
   "
-  echo "  [ok] Removed hooks and VYNC_HOME"
+  echo "  [ok] Removed marketplace, plugin, VYNC_HOME, and hooks"
 fi
+
+# 3. Remove plugin cache
+rm -rf "$CLAUDE_DIR/plugins/cache/PresenceWith-Vync"
+echo "  [ok] Removed plugin cache"
 
 echo ""
 echo "[vync] Uninstallation complete."

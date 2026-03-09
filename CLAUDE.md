@@ -24,8 +24,8 @@ npm run package:desktop  # Package macOS DMG
 
 ## Claude Code Plugin
 
-**Marketplace install**: `/plugin marketplace add PresenceWith/Vync` → `/plugin install vync@PresenceWith-Vync`
-**Dev install**: `bash .claude-plugin/install.sh`
+**Install**: `npm install` (postinstall → marketplace 등록 + 캐시 동기화)
+**Update**: `git pull && npm install` (프로젝트 + 플러그인 동시 갱신)
 
 Plugin layout (marketplace standard — root-level):
 - `commands/vync.md` — `/vync init|open|close|stop` (CLI), `/vync create|read|update` (sub-agent)

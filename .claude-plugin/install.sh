@@ -4,82 +4,93 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CLAUDE_DIR="$HOME/.claude"
-
-echo "[vync] Installing Claude Code plugin..."
-
-# 1. Skills
-mkdir -p "$CLAUDE_DIR/skills"
-if [ -L "$CLAUDE_DIR/skills/vync-editing" ]; then
-  rm "$CLAUDE_DIR/skills/vync-editing"
-fi
-ln -s "$PROJECT_ROOT/skills/vync-editing" "$CLAUDE_DIR/skills/vync-editing"
-echo "  [ok] Skill: vync-editing"
-
-# 2. Commands
-mkdir -p "$CLAUDE_DIR/commands"
-for cmd in vync.md; do
-  target="$CLAUDE_DIR/commands/$cmd"
-  [ -L "$target" ] && rm "$target"
-  [ -f "$target" ] && rm "$target"
-  ln -s "$PROJECT_ROOT/commands/$cmd" "$target"
-  echo "  [ok] Command: /${cmd%.md}"
-done
-
-# Remove deprecated /vync-create (merged into /vync create)
-deprecated="$CLAUDE_DIR/commands/vync-create.md"
-[ -L "$deprecated" ] && rm "$deprecated" && echo "  [ok] Removed deprecated: /vync-create"
-[ -f "$deprecated" ] && rm "$deprecated" && echo "  [ok] Removed deprecated: /vync-create"
-
-# 3. Agents
-agents_dir="$CLAUDE_DIR/agents"
-mkdir -p "$agents_dir"
-for agent in vync-translator.md; do
-  src="$PROJECT_ROOT/agents/$agent"
-  dst="$agents_dir/$agent"
-  [ -L "$dst" ] && rm "$dst"
-  ln -s "$src" "$dst" && echo "  [ok] Agent: ${agent%.md}"
-done
-
-# 4. Hooks — merge into settings.json (with backup)
 SETTINGS="$CLAUDE_DIR/settings.json"
+
+echo "[vync] Setting up Claude Code plugin..."
+
+# 0. Ensure settings.json exists
 if [ ! -f "$SETTINGS" ]; then
   echo '{}' > "$SETTINGS"
 fi
-
-# Backup existing settings
 cp "$SETTINGS" "$SETTINGS.bak"
-echo "  [ok] Backup: $SETTINGS.bak"
 
-# Use node to safely merge hooks (preserve existing fields)
+# 1. Clean up legacy symlinks (from pre-marketplace install)
+for f in "$CLAUDE_DIR/skills/vync-editing" \
+         "$CLAUDE_DIR/commands/vync.md" \
+         "$CLAUDE_DIR/commands/vync-create.md" \
+         "$CLAUDE_DIR/agents/vync-translator.md"; do
+  [ -L "$f" ] && rm "$f"
+done
+
+# 2. Register marketplace + enable plugin + VYNC_HOME + clean legacy hooks
 node -e "
 const fs = require('fs');
 const settings = JSON.parse(fs.readFileSync('$SETTINGS', 'utf-8'));
-const hooks = JSON.parse(fs.readFileSync('$PROJECT_ROOT/hooks/hooks.json', 'utf-8'));
 
-// Merge hooks: append vync hooks to existing arrays
-if (!settings.hooks) settings.hooks = {};
-for (const [event, entries] of Object.entries(hooks.hooks)) {
-  if (!settings.hooks[event]) settings.hooks[event] = [];
-  // Remove existing vync hooks first (idempotent)
-  settings.hooks[event] = settings.hooks[event].filter(
-    e => !JSON.stringify(e).includes('vync')
-  );
-  settings.hooks[event].push(...entries);
-}
+// Register local directory as marketplace source
+if (!settings.extraKnownMarketplaces) settings.extraKnownMarketplaces = {};
+settings.extraKnownMarketplaces['PresenceWith-Vync'] = {
+  source: { source: 'directory', path: '$PROJECT_ROOT' }
+};
 
-// Set VYNC_HOME env
+// Enable plugin
+if (!settings.enabledPlugins) settings.enabledPlugins = {};
+settings.enabledPlugins['vync@PresenceWith-Vync'] = true;
+
+// Set VYNC_HOME (used by CLI)
 if (!settings.env) settings.env = {};
 settings.env.VYNC_HOME = '$PROJECT_ROOT';
 
+// Clean legacy hooks (from old install.sh that merged into settings.json)
+if (settings.hooks) {
+  for (const event of Object.keys(settings.hooks)) {
+    settings.hooks[event] = settings.hooks[event].filter(
+      e => !JSON.stringify(e).includes('vync')
+    );
+    if (settings.hooks[event].length === 0) delete settings.hooks[event];
+  }
+  if (Object.keys(settings.hooks).length === 0) delete settings.hooks;
+}
+
 fs.writeFileSync('$SETTINGS', JSON.stringify(settings, null, 2));
 "
-echo "  [ok] Hooks: PostToolUse, SessionEnd"
+echo "  [ok] Marketplace: PresenceWith-Vync (local: $PROJECT_ROOT)"
+echo "  [ok] Plugin: vync@PresenceWith-Vync enabled"
 echo "  [ok] Env: VYNC_HOME=$PROJECT_ROOT"
 
-# 5. CLI access via PATH (no npm link — private: true)
+# 3. Sync plugin cache (ensures cache matches local project after git pull)
+VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$PROJECT_ROOT/.claude-plugin/plugin.json','utf8')).version)")
+CACHE_BASE="$CLAUDE_DIR/plugins/cache/PresenceWith-Vync/vync"
+
+# Remove old version caches
+if [ -d "$CACHE_BASE" ]; then
+  for d in "$CACHE_BASE"/*/; do
+    [ -d "$d" ] || continue
+    dname=$(basename "$d")
+    if [ "$dname" != "$VERSION" ]; then
+      rm -rf "$d"
+      echo "  [ok] Removed old cache: v$dname"
+    fi
+  done
+fi
+
+# Sync current version to cache
+CACHE_DIR="$CACHE_BASE/$VERSION"
+mkdir -p "$CACHE_DIR"
+rsync -a --delete \
+  --exclude 'node_modules' \
+  --exclude '.git' \
+  --exclude 'dist' \
+  --exclude 'build' \
+  --exclude '.worktrees' \
+  --exclude '.vync' \
+  --exclude '*.lastread' \
+  "$PROJECT_ROOT/" "$CACHE_DIR/"
+echo "  [ok] Cache synced: v$VERSION"
+
+# 4. Done
 echo ""
-echo "[vync] Installation complete!"
-echo "  Restart Claude Code to activate."
+echo "[vync] Setup complete! Restart Claude Code to activate."
 echo ""
 echo "  To use 'vync' CLI from any directory, add to your shell profile:"
 echo "    export PATH=\"$PROJECT_ROOT/bin:\$PATH\""

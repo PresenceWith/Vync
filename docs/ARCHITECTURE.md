@@ -346,7 +346,7 @@ Vync/                              # nx monorepo (Drawnix 포크 기반)
 ├── .claude-plugin/                # Claude Code 플러그인 메타 (marketplace 표준) [VYNC 추가]
 │   ├── plugin.json                # 플러그인 메타데이터
 │   ├── marketplace.json           # 마켓플레이스 등록 정보
-│   ├── install.sh                 # 개발자 설치 (심볼릭 링크 + 설정 머지)
+│   ├── install.sh                 # 마켓플레이스 등록 + 캐시 동기화 (postinstall)
 │   └── uninstall.sh               # 정리
 ├── commands/                      # /vync 슬래시 커맨드 (marketplace 표준 위치) [VYNC 추가]
 │   └── vync.md

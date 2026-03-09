@@ -3,7 +3,6 @@ description: Vync server and file management (init, open, close, stop, read, cre
 allowed-tools: Bash, Read, Agent
 argument-hint: <init|open|close|stop|create|read|update> [args]
 ---
-<!-- GITHUB-UPDATE-POC-MARKER -->
 
 Run the Vync CLI or delegate to the vync-translator sub-agent.
 
