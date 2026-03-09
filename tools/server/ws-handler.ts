@@ -1,9 +1,11 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'node:http';
 import type { WsMessage } from '@vync/shared';
+import type { FileRegistry } from './file-registry.js';
 
-export function createWsServer(server: Server, port: number) {
+export function createWsServer(server: Server, port: number, registry: FileRegistry) {
   const wss = new WebSocketServer({ noServer: true });
+  const clientFiles = new Map<WebSocket, string>();
 
   const allowedOrigins = [
     `http://localhost:${port}`,
@@ -11,42 +13,55 @@ export function createWsServer(server: Server, port: number) {
   ];
 
   server.on('upgrade', (request, socket, head) => {
-    const { pathname } = new URL(
-      request.url!,
-      `http://${request.headers.host}`
-    );
-    if (pathname !== '/ws') return;
+    const url = new URL(request.url!, `http://${request.headers.host}`);
+    if (url.pathname !== '/ws') return;
 
+    // Strict origin check — skip for port 0 (tests)
     const origin = request.headers.origin;
-    if (origin && !allowedOrigins.includes(origin)) {
+    if (port > 0 && (!origin || !allowedOrigins.includes(origin))) {
       socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
       socket.destroy();
       return;
     }
 
+    const filePath = url.searchParams.get('file');
+
     wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit('connection', ws, request);
+      wss.emit('connection', ws, request, filePath);
     });
   });
 
-  wss.on('connection', (ws) => {
-    console.log('[vync] WebSocket client connected');
-    ws.send(JSON.stringify({ type: 'connected' } satisfies WsMessage));
+  wss.on('connection', (ws: WebSocket, _request: any, filePath: string | null) => {
+    if (!filePath) {
+      ws.send(JSON.stringify({ type: 'error', code: 'FILE_REQUIRED' } satisfies WsMessage));
+      ws.close(4400, 'file parameter required');
+      return;
+    }
+
+    // Check if file is registered
+    if (!registry.getSync(filePath)) {
+      ws.send(JSON.stringify({ type: 'error', code: 'FILE_NOT_FOUND' } satisfies WsMessage));
+      ws.close(4404, 'File not registered');
+      return;
+    }
+
+    clientFiles.set(ws, filePath);
+    registry.addClient(filePath, ws);
+
+    console.log(`[vync] WS client connected: ${filePath}`);
+    ws.send(JSON.stringify({ type: 'connected', filePath } satisfies WsMessage));
 
     ws.on('close', () => {
-      console.log('[vync] WebSocket client disconnected');
+      const fp = clientFiles.get(ws);
+      if (fp) {
+        registry.removeClient(fp, ws);
+        clientFiles.delete(ws);
+      }
+      console.log('[vync] WS client disconnected');
     });
   });
 
   return {
-    broadcast(message: WsMessage) {
-      const data = JSON.stringify(message);
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(data);
-        }
-      });
-    },
     close() {
       wss.clients.forEach((client) => client.terminate());
       wss.close();
