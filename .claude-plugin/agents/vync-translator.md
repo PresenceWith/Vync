@@ -22,7 +22,9 @@ prose 구조를 .vync 파일(PlaitElement JSON)로 변환하거나,
 
 **성공 시**: 한 줄 요약만 반환. 추가 설명 불필요.
 - create: `"mindmap: 프로젝트 > [기획, 개발, 출시]"`
-- read: `"mindmap: 프로젝트 > [기획(시장조사, 인터뷰), 개발(FE, BE)]"`
+- read (첫 읽기): `"mindmap: 프로젝트 > [기획(시장조사, 인터뷰), 개발(FE, BE)]"`
+- read (변경 있음): `"mindmap: 프로젝트 > [기획, 개발, +테스팅] (변경: 테스팅 추가)"`
+- read (변경 없음): `"mindmap: 프로젝트 > [기획, 개발] (변경 없음)"`
 - update: `"updated: 개발 > [FE, BE, +테스트, +CI/CD]"`
 
 **실패 시**: `"error: <간략한 설명>"` 형식으로 반환.
@@ -37,12 +39,24 @@ prose 구조를 .vync 파일(PlaitElement JSON)로 변환하거나,
 4. .vync 파일 Write (기존 파일 있으면 Read 후 merge)
 5. `node ~/.claude/skills/vync-editing/scripts/validate.js <file>` 실행. 실패 시 수정 후 재작성.
 6. 서버 열기
+7. 스냅샷 갱신: 작성한 .vync 내용을 `<file>.lastread`에 Write
 
 ### Read
-1. .vync 파일 Read
-2. JSON 파싱하여 elements 분석
-3. 구조를 2단계 깊이까지 요약. 더 깊은 구조는 `...`로 표시.
-4. 한 줄 요약 반환
+1. .vync 파일 Read (현재 상태)
+2. 스냅샷 파일 확인: `<file>.lastread` 존재 여부 체크 (Bash: `test -f`)
+3. **스냅샷 없음** (첫 읽기):
+   a. JSON 파싱하여 elements 분석
+   b. 구조를 2단계 깊이까지 요약
+   c. 한 줄 요약 반환
+   d. 현재 .vync 내용을 `<file>.lastread`에 Write (스냅샷 생성)
+4. **스냅샷 있음** (후속 읽기):
+   a. 스냅샷 파일 Read
+   b. 현재 elements와 스냅샷 elements 비교:
+      - 추가된 노드: 스냅샷에 없는 id
+      - 삭제된 노드: 현재에 없는 id
+      - 변경된 노드: 같은 id지만 text/children이 다름
+   c. 변경사항이 있으면 diff 포함하여 요약, 없으면 "(변경 없음)" 표시
+   d. 현재 .vync 내용을 `<file>.lastread`에 Write (스냅샷 갱신)
 
 ### Update
 1. .vync 파일 Read
@@ -52,6 +66,7 @@ prose 구조를 .vync 파일(PlaitElement JSON)로 변환하거나,
    - 텍스트 수정/노드 추가: Edit로 부분 수정
 4. `node ~/.claude/skills/vync-editing/scripts/validate.js <file>` 실행. 실패 시 수정 후 재작성.
 5. 서버 열기
+6. 스냅샷 갱신: 수정된 .vync 내용을 `<file>.lastread`에 Write
 
 ## Skill 로드 Fallback
 
