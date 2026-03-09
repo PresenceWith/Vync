@@ -6,9 +6,9 @@ A local-first visual planning tool. `.vync` JSON files are the source of truth, 
 
 ## Project Structure
 
-- **Monorepo**: npm + nx (`apps/web`, `packages/drawnix`, `packages/react-board`, `packages/react-text`, `packages/shared`)
+- **Monorepo**: npm + nx (`apps/web`, `packages/board`, `packages/react-board`, `packages/react-text`, `packages/shared`)
 - **Server**: `tools/server/server.ts` — Express + Vite middleware mode + WebSocket (:3100)
-- **CLI**: `bin/vync.js` → `tools/cli/main.ts` (init, open, stop)
+- **CLI**: `bin/vync.js` → `tools/cli/main.ts` (init, open, close, stop)
 - **Electron**: `tools/electron/main.ts` (thin shell, in-process server)
 - **Shared types**: `packages/shared/src/types.ts` — `VyncFile<T>`, `WsMessage<T>`
 - **Path alias**: `@vync/shared` → `packages/shared/src/index.ts`
@@ -24,11 +24,12 @@ npm run package:desktop  # Package macOS DMG
 
 ## Claude Code Plugin
 
-The plugin is in `.claude-plugin/`. Install with `/plugin install vync` or `bash .claude-plugin/install.sh`.
+The plugin is in `.claude-plugin/`. Install with `bash .claude-plugin/install.sh`.
 
-- `/vync init|open|stop|read` — CLI operations
-- `/vync-create mindmap|flowchart|diagram` — AI diagram creation
+- `/vync init|open|close|stop` — CLI operations (direct execution)
+- `/vync create|read|update` — AI diagram operations (delegated to `vync-translator` sub-agent)
 - `vync-editing` skill — `.vync` file editing guide with validation
+- `vync-translator` agent — Prose ↔ .vync JSON translator (context window protection)
 
 ## Editing .vync Files
 
@@ -40,12 +41,14 @@ When editing `.vync` files, **always** use the `vync-editing` skill. Key rules:
 
 ## Architecture Decisions
 
-See `docs/DECISIONS.md` for the full registry (D-001 to D-012). Key ones:
+See `docs/DECISIONS.md` for the full registry (D-001 to D-014). Key ones:
 - **D-004**: Custom Node Server (not Next.js)
 - **D-008**: Last Write Wins (conflict resolution)
 - **D-009**: SHA-256 content hash + isWriting flag (echo prevention)
 - **D-011**: npm + nx monorepo (not pnpm)
 - **D-012**: Electron thin shell
+- **D-013**: Sub-agent translator layer (context window protection)
+- **D-014**: Hub Server (multi-file, FileRegistry, file-scoped WS)
 
 ## Documentation
 
@@ -58,10 +61,11 @@ See `docs/DECISIONS.md` for the full registry (D-001 to D-012). Key ones:
 ## Sync Mechanism
 
 ```
-.vync file ←→ chokidar ←→ Server ←→ WebSocket ←→ Browser
+.vync file ←→ chokidar ←→ Hub Server ←→ WebSocket (?file=) ←→ Browser (?file=)
 ```
 
+- Hub Server: single server (:3100) manages multiple files via FileRegistry (→ D-014)
 - Echo prevention: SHA-256 hash comparison + isWriting flag
 - Atomic writes: tmp file → rename
-- Frontend: onChange → 300ms debounce → PUT /api/sync
-- WebSocket: full file broadcast on change
+- Frontend: onChange → 300ms debounce → PUT /api/sync?file=<path>
+- WebSocket: file-scoped broadcast (A.vync changes only reach A.vync clients)

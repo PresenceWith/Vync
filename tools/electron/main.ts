@@ -33,9 +33,7 @@ app.on('open-file', (event, filePath) => {
 // --- App ready ---
 app.whenReady().then(async () => {
   const filePath =
-    pendingFilePath ||
-    process.argv.find((a) => a.endsWith('.vync')) ||
-    null;
+    pendingFilePath || process.argv.find((a) => a.endsWith('.vync')) || null;
 
   if (!filePath) {
     const result = await dialog.showOpenDialog({
@@ -66,35 +64,48 @@ app.on('window-all-closed', async () => {
 async function openFile(filePath: string): Promise<void> {
   const resolved = path.resolve(filePath);
 
-  // Shut down existing server if running
   if (serverHandle) {
-    await serverHandle.shutdown();
-    serverHandle = null;
-  }
-
-  try {
-    const { startServer } = await import('../server/server.js');
-
-    const isDev = !app.isPackaged;
-    const staticDir = isDev
-      ? undefined
-      : path.join(process.resourcesPath, 'dist', 'apps', 'web');
-
-    serverHandle = await startServer(resolved, {
-      port: 3100,
-      mode: isDev ? 'development' : 'production',
-      staticDir,
-    });
-  } catch (err: any) {
-    dialog.showErrorBox('Vync Error', err.message);
-    app.quit();
-    return;
-  }
-
-  if (!mainWindow) {
-    createWindow(serverHandle.url);
+    // Hub mode: register new file, don't restart
+    try {
+      await fetch(`${serverHandle.url}/api/files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath: resolved }),
+      });
+    } catch (err: any) {
+      dialog.showErrorBox(
+        'Vync Error',
+        `Failed to register file: ${err.message}`
+      );
+      return;
+    }
   } else {
-    mainWindow.loadURL(serverHandle.url);
+    // Start server with new signature
+    try {
+      const { startServer } = await import('../server/server.js');
+      const isDev = !app.isPackaged;
+      const staticDir = isDev
+        ? undefined
+        : path.join(process.resourcesPath, 'dist', 'apps', 'web');
+      serverHandle = await startServer({
+        initialFile: resolved,
+        port: 3100,
+        mode: isDev ? 'development' : 'production',
+        staticDir,
+      });
+    } catch (err: any) {
+      dialog.showErrorBox('Vync Error', err.message);
+      app.quit();
+      return;
+    }
+  }
+
+  // URL now includes ?file= param
+  const fileUrl = `${serverHandle!.url}/?file=${encodeURIComponent(resolved)}`;
+  if (!mainWindow) {
+    createWindow(fileUrl);
+  } else {
+    mainWindow.loadURL(fileUrl);
   }
 }
 

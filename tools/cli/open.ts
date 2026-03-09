@@ -13,29 +13,31 @@ const PORT = 3100;
 const POLL_INTERVAL = 300;
 const POLL_TIMEOUT = 10_000;
 
-// --- ServerInfo: PID file now stores pid + mode + filePath ---
+// --- ServerInfo: JSON format with version + port ---
 
 export interface ServerInfo {
+  version: number;
   pid: number;
   mode: 'daemon' | 'electron' | 'foreground';
-  filePath: string;
+  port: number;
 }
 
 export async function readServerInfo(): Promise<ServerInfo | null> {
   try {
     const content = (await fs.readFile(PID_FILE, 'utf-8')).trim();
+    // Try JSON first
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed.version && parsed.pid) return parsed;
+    } catch {}
+    // Legacy 3-line format: pid\nmode\nfilePath
     const lines = content.split('\n');
-    // Old format was just a PID number — treat as stale
-    if (lines.length < 3) {
-      await fs.unlink(PID_FILE).catch(() => {});
-      return null;
+    if (lines.length >= 2 && !isNaN(Number(lines[0]))) {
+      return { version: 1, pid: Number(lines[0]), mode: lines[1] as any, port: PORT };
     }
-    const [pidStr, mode, ...rest] = lines;
-    return {
-      pid: Number(pidStr),
-      mode: mode as ServerInfo['mode'],
-      filePath: rest.join('\n'),
-    };
+    // Corrupt — clean up
+    await fs.unlink(PID_FILE).catch(() => {});
+    return null;
   } catch {
     return null;
   }
@@ -43,11 +45,7 @@ export async function readServerInfo(): Promise<ServerInfo | null> {
 
 export async function writeServerInfo(info: ServerInfo): Promise<void> {
   await fs.mkdir(VYNC_DIR, { recursive: true });
-  await fs.writeFile(
-    PID_FILE,
-    `${info.pid}\n${info.mode}\n${info.filePath}`,
-    'utf-8'
-  );
+  await fs.writeFile(PID_FILE, JSON.stringify(info), 'utf-8');
 }
 
 // --- Validation ---
@@ -64,43 +62,56 @@ async function validateAndResolve(filePath: string): Promise<string> {
   return resolved;
 }
 
-// --- Smart restart: 3-state server detection ---
+// --- 2-state server detection ---
 
-type ServerState = 'none' | 'same-file' | 'different-file';
-interface HandleResult {
-  state: ServerState;
-  info: ServerInfo | null;
-}
-
-async function handleExistingServer(
-  newFilePath: string
-): Promise<HandleResult> {
+async function isServerRunning(): Promise<{ running: boolean; info: ServerInfo | null }> {
   const info = await readServerInfo();
-  if (!info) return { state: 'none', info: null };
+  if (!info) return { running: false, info: null };
 
-  // Stale PID detection (process existence check)
+  // Check if process is alive
   try {
     process.kill(info.pid, 0);
   } catch {
     await fs.unlink(PID_FILE).catch(() => {});
-    return { state: 'none', info: null };
+    return { running: false, info: null };
   }
 
-  // HTTP health check — PID alive but server may not be responding
+  // Health check
   try {
-    const res = await fetch(`http://localhost:${PORT}/api/sync`, {
-      method: 'HEAD',
+    const res = await fetch(`http://localhost:${info.port}/api/health`, {
       signal: AbortSignal.timeout(1000),
     });
-    if (!res.ok) throw new Error();
-  } catch {
-    // PID alive but HTTP dead → stale or PID reuse
-    await fs.unlink(PID_FILE).catch(() => {});
-    return { state: 'none', info: null };
-  }
+    if (res.ok) {
+      const body = await res.json();
+      if (body.version === 2) return { running: true, info };
+      // Old server -> stop it
+      await vyncStop();
+      return { running: false, info: null };
+    }
+  } catch {}
 
-  const state = info.filePath === newFilePath ? 'same-file' : 'different-file';
-  return { state, info };
+  // PID alive but HTTP dead -> stale
+  await fs.unlink(PID_FILE).catch(() => {});
+  return { running: false, info: null };
+}
+
+// --- Helpers ---
+
+async function registerFile(port: number, filePath: string): Promise<void> {
+  const res = await fetch(`http://localhost:${port}/api/files`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filePath }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(`[vync] Registration failed: ${(body as any).error || res.statusText}`);
+  }
+}
+
+async function openBrowserWithFile(port: number, filePath: string): Promise<void> {
+  const openModule = await import('open');
+  await openModule.default(`http://localhost:${port}/?file=${encodeURIComponent(filePath)}`);
 }
 
 // --- Startup helpers ---
@@ -126,13 +137,14 @@ async function findElectronBinary(): Promise<string | null> {
 
 async function runForeground(resolved: string): Promise<void> {
   await writeServerInfo({
+    version: 2,
     pid: process.pid,
     mode: 'foreground',
-    filePath: resolved,
+    port: PORT,
   });
 
   const { startServer } = await import('../server/server.js');
-  const { shutdown } = await startServer(resolved, { openBrowser: true });
+  const { shutdown } = await startServer({ initialFile: resolved, openBrowser: true });
 
   const cleanup = async () => {
     await shutdown();
@@ -170,11 +182,7 @@ async function runElectron(resolved: string): Promise<void> {
     process.exit(1);
   }
 
-  await writeServerInfo({
-    pid: childPid,
-    mode: 'electron',
-    filePath: resolved,
-  });
+  await writeServerInfo({ version: 2, pid: childPid, mode: 'electron', port: PORT });
   child.unref();
   fsSync.closeSync(logFd);
 
@@ -193,10 +201,9 @@ async function runElectron(resolved: string): Promise<void> {
     }
 
     try {
-      const res = await fetch(`${url}/api/sync`);
+      const res = await fetch(`${url}/api/health`);
       if (res.ok) {
         console.log(`[vync] Vync app running (PID ${childPid})`);
-        console.log(`[vync] Watching: ${resolved}`);
         console.log(`[vync] Log: ${LOG_FILE}`);
         return;
       }
@@ -249,11 +256,7 @@ async function runDaemon(resolved: string): Promise<void> {
   }
 
   // Save child PID (not this process's PID)
-  await writeServerInfo({
-    pid: childPid,
-    mode: 'daemon',
-    filePath: resolved,
-  });
+  await writeServerInfo({ version: 2, pid: childPid, mode: 'daemon', port: PORT });
   child.unref();
   fsSync.closeSync(logFd);
 
@@ -274,14 +277,13 @@ async function runDaemon(resolved: string): Promise<void> {
 
     // Try to reach the server
     try {
-      const res = await fetch(`${url}/api/sync`);
+      const res = await fetch(`${url}/api/health`);
       if (res.ok) {
-        // Server is ready — open browser
-        const openModule = await import('open');
-        await openModule.default(url);
+        // Server is ready — register file + open browser
+        await registerFile(PORT, resolved);
+        await openBrowserWithFile(PORT, resolved);
 
         console.log(`[vync] Server running at ${url} (PID ${childPid})`);
-        console.log(`[vync] Watching: ${resolved}`);
         console.log(`[vync] Log: ${LOG_FILE}`);
         return;
       }
@@ -309,26 +311,18 @@ export async function vyncOpen(
   opts: { foreground?: boolean } = {}
 ): Promise<void> {
   const resolved = await validateAndResolve(filePath);
-  const { state, info } = await handleExistingServer(resolved);
+  const { running, info } = await isServerRunning();
+  const port = info?.port ?? PORT;
 
-  if (state === 'same-file') {
-    if (info?.mode === 'electron') {
-      // Electron second-instance event auto-focuses → no browser open needed
-      console.log('[vync] Electron already running with this file.');
-    } else {
-      console.log('[vync] Server already running, opening browser...');
-      const openModule = await import('open');
-      await openModule.default(`http://localhost:${PORT}`);
-    }
+  if (running) {
+    // Hub mode: register file and open browser
+    console.log('[vync] Server running, registering file...');
+    await registerFile(port, resolved);
+    await openBrowserWithFile(port, resolved);
     return;
   }
 
-  if (state === 'different-file') {
-    console.log(`[vync] Switching to: ${resolved}`);
-    await vyncStop();
-  }
-
-  // state === 'none' or just stopped
+  // Start new server
   if (opts.foreground) {
     return runForeground(resolved);
   }
@@ -339,6 +333,52 @@ export async function vyncOpen(
     return runElectron(resolved);
   }
   return runDaemon(resolved);
+}
+
+export async function vyncClose(
+  filePath?: string,
+  opts?: { keepServer?: boolean }
+): Promise<void> {
+  const info = await readServerInfo();
+  if (!info) {
+    console.error('[vync] No running server.');
+    return;
+  }
+
+  if (filePath) {
+    const resolved = resolveVyncPath(filePath);
+    try {
+      const res = await fetch(
+        `http://localhost:${info.port}/api/files?file=${encodeURIComponent(resolved)}`,
+        { method: 'DELETE' }
+      );
+      if (res.ok) console.log(`[vync] Closed: ${resolved}`);
+    } catch {
+      console.error('[vync] Server not reachable.');
+      return;
+    }
+  } else {
+    try {
+      await fetch(`http://localhost:${info.port}/api/files?all=true`, { method: 'DELETE' });
+      console.log('[vync] All files closed.');
+    } catch {
+      console.error('[vync] Server not reachable.');
+      return;
+    }
+  }
+
+  // Check if server should stop (no files left)
+  if (!opts?.keepServer) {
+    try {
+      const filesRes = await fetch(`http://localhost:${info.port}/api/files`);
+      const body = await filesRes.json();
+      if ((body as any).files.length === 0) {
+        await vyncStop();
+      }
+    } catch {
+      // Server already gone
+    }
+  }
 }
 
 export function getPidFilePath(): string {
@@ -389,11 +429,12 @@ export async function vyncStop(): Promise<void> {
   }
 
   // Wait for port to be released (max 2s)
+  const port = info.port ?? PORT;
   let portFree = false;
   const portStart = Date.now();
   while (Date.now() - portStart < 2000) {
     const free = await new Promise<boolean>((resolve) => {
-      const probe = net.createConnection({ port: PORT, host: '127.0.0.1' });
+      const probe = net.createConnection({ port, host: '127.0.0.1' });
       probe.once('connect', () => {
         probe.destroy();
         resolve(false);
@@ -409,7 +450,7 @@ export async function vyncStop(): Promise<void> {
 
   if (!portFree) {
     console.error(
-      `[vync] Warning: port ${PORT} still in use after stop. Manual cleanup may be required.`
+      `[vync] Warning: port ${port} still in use after stop.`
     );
   }
   console.log(`[vync] Server stopped (PID ${info.pid})`);

@@ -9,7 +9,8 @@ echo "[vync] Uninstalling Claude Code plugin..."
 rm -f "$CLAUDE_DIR/skills/vync-editing"
 rm -f "$CLAUDE_DIR/commands/vync.md"
 rm -f "$CLAUDE_DIR/commands/vync-create.md"
-echo "  [ok] Removed skills and commands"
+rm -f "$CLAUDE_DIR/agents/vync-translator.md"
+echo "  [ok] Removed skills, commands, and agents"
 
 # 2. Remove hooks from settings.json
 SETTINGS="$CLAUDE_DIR/settings.json"

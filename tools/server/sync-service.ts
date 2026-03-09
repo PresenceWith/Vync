@@ -91,7 +91,11 @@ export function createSyncService(filePath: string) {
     }
   }
 
-  return { init, writeFile, handleFileChange, readFile };
+  async function drain(): Promise<void> {
+    await writeQueue;
+  }
+
+  return { init, writeFile, handleFileChange, readFile, drain, filePath };
 }
 
 export type SyncService = ReturnType<typeof createSyncService>;
