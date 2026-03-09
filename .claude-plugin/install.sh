@@ -12,7 +12,7 @@ mkdir -p "$CLAUDE_DIR/skills"
 if [ -L "$CLAUDE_DIR/skills/vync-editing" ]; then
   rm "$CLAUDE_DIR/skills/vync-editing"
 fi
-ln -s "$SCRIPT_DIR/skills/vync-editing" "$CLAUDE_DIR/skills/vync-editing"
+ln -s "$PROJECT_ROOT/skills/vync-editing" "$CLAUDE_DIR/skills/vync-editing"
 echo "  [ok] Skill: vync-editing"
 
 # 2. Commands
@@ -21,7 +21,7 @@ for cmd in vync.md; do
   target="$CLAUDE_DIR/commands/$cmd"
   [ -L "$target" ] && rm "$target"
   [ -f "$target" ] && rm "$target"
-  ln -s "$SCRIPT_DIR/commands/$cmd" "$target"
+  ln -s "$PROJECT_ROOT/commands/$cmd" "$target"
   echo "  [ok] Command: /${cmd%.md}"
 done
 
@@ -34,7 +34,7 @@ deprecated="$CLAUDE_DIR/commands/vync-create.md"
 agents_dir="$CLAUDE_DIR/agents"
 mkdir -p "$agents_dir"
 for agent in vync-translator.md; do
-  src="$SCRIPT_DIR/agents/$agent"
+  src="$PROJECT_ROOT/agents/$agent"
   dst="$agents_dir/$agent"
   [ -L "$dst" ] && rm "$dst"
   ln -s "$src" "$dst" && echo "  [ok] Agent: ${agent%.md}"
@@ -54,7 +54,7 @@ echo "  [ok] Backup: $SETTINGS.bak"
 node -e "
 const fs = require('fs');
 const settings = JSON.parse(fs.readFileSync('$SETTINGS', 'utf-8'));
-const hooks = JSON.parse(fs.readFileSync('$SCRIPT_DIR/hooks.json', 'utf-8'));
+const hooks = JSON.parse(fs.readFileSync('$PROJECT_ROOT/hooks/hooks.json', 'utf-8'));
 
 // Merge hooks: append vync hooks to existing arrays
 if (!settings.hooks) settings.hooks = {};

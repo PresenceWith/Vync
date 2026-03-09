@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // \"\"' | { read f; [[ \"$f\" == *.vync ]] && node -e \"const fs=require('fs'),p=process.argv[1];try{const d=JSON.parse(fs.readFileSync(p,'utf8'));const e=[];if(typeof d.version!=='number')e.push('missing version');if(!d.viewport||typeof d.viewport!=='object')e.push('missing viewport');else{if(typeof d.viewport.zoom!=='number')e.push('viewport.zoom');if(typeof d.viewport.x!=='number')e.push('viewport.x');if(typeof d.viewport.y!=='number')e.push('viewport.y')}if(!Array.isArray(d.elements))e.push('elements must be array');if(e.length){console.error('[vync-validate] '+p+': '+e.join(', '));process.exit(1)}console.log('[vync-validate] '+p+': OK')}catch(err){console.error('[vync-validate] '+p+': '+err.message);process.exit(1)}\" \"$f\" 2>&1 || true; }"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -X DELETE 'http://localhost:3100/api/files?all=true' 2>/dev/null; [ -f \"$HOME/.vync/server.pid\" ] && { pid=$(node -e \"try{console.log(JSON.parse(require('fs').readFileSync('$HOME/.vync/server.pid','utf8')).pid)}catch{const l=require('fs').readFileSync('$HOME/.vync/server.pid','utf8').split('\\n');console.log(l[0])}\" 2>/dev/null || head -1 \"$HOME/.vync/server.pid\"); kill \"$pid\" 2>/dev/null; rm -f \"$HOME/.vync/server.pid\"; }; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}

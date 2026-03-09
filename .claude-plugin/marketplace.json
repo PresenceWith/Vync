@@ -1,0 +1,26 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "PresenceWith-Vync",
+  "description": "Visual planning tool with real-time file sync for Claude Code",
+  "owner": {
+    "name": "PresenceWith",
+    "email": "presence042@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "vync",
+      "source": "./",
+      "description": "Create and edit mindmaps, flowcharts, and diagrams with real-time file sync between Claude Code and web UI",
+      "version": "0.1.0",
+      "author": {
+        "name": "PresenceWith",
+        "url": "https://github.com/PresenceWith"
+      },
+      "homepage": "https://github.com/PresenceWith/Vync",
+      "repository": "https://github.com/PresenceWith/Vync",
+      "license": "MIT",
+      "category": "productivity",
+      "tags": ["whiteboard", "mindmap", "flowchart", "diagram", "visual-planning", "file-sync"]
+    }
+  ]
+}
