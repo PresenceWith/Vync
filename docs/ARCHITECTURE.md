@@ -303,7 +303,7 @@ Vync/                              # nx monorepo (Drawnix 포크 기반)
 ├── packages/
 │   ├── board/                     # Vync Board UI 라이브러리 (@vync/board)
 │   │   └── src/
-│   │       ├── board.tsx          # <Board> 컴포넌트 (onChange, value props)
+│   │       ├── board.tsx          # <VyncBoard> 컴포넌트 (onChange, value props)
 │   │       ├── data/              # 직렬화/역직렬화 (json.ts, blob.ts, filesystem.ts)
 │   │       └── components/        # 툴바, 다이얼로그 등
 │   └── react-board/               # Plait ↔ React 브릿지
