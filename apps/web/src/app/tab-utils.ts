@@ -16,7 +16,7 @@ export function computeLabels(filePaths: string[]): TabInfo[] {
 
   return filePaths.map((fp, i) => {
     const bn = basenames[i];
-    if (counts.get(bn)! > 1) {
+    if ((counts.get(bn) ?? 0) > 1) {
       const parts = fp.split('/');
       const parent = parts.length >= 2 ? parts[parts.length - 2] : '';
       return { filePath: fp, label: parent ? `${parent}/${bn}` : bn };

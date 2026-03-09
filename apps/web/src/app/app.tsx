@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { FileBoard } from './file-board';
 import { TabBar } from './tab-bar';
 import { computeLabels } from './tab-utils';
@@ -8,10 +8,20 @@ const initialFile = new URLSearchParams(window.location.search).get('file');
 
 function NoFileView() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontFamily: 'system-ui' }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        fontFamily: 'system-ui',
+      }}
+    >
       <div style={{ textAlign: 'center', color: '#666' }}>
         <h2>No file selected</h2>
-        <p>Use <code>vync open &lt;file&gt;</code> to start.</p>
+        <p>
+          Use <code>vync open &lt;file&gt;</code> to start.
+        </p>
       </div>
     </div>
   );
@@ -26,8 +36,8 @@ export function App() {
 
   // Hub WebSocket
   useEffect(() => {
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${location.host}/ws`;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
     let ws: WebSocket;
     let reconnectTimer: ReturnType<typeof setTimeout>;
 
@@ -62,7 +72,9 @@ export function App() {
           });
           setActiveFilePath((prev) => {
             if (prev !== msg.filePath) return prev;
-            const remaining = tabsRef.current.filter((t) => t.filePath !== msg.filePath);
+            const remaining = tabsRef.current.filter(
+              (t) => t.filePath !== msg.filePath
+            );
             return remaining[0]?.filePath || null;
           });
         }
@@ -86,7 +98,7 @@ export function App() {
     if (activeFilePath) {
       const url = new URL(window.location.href);
       url.searchParams.set('file', activeFilePath);
-      history.replaceState(null, '', url.toString());
+      window.history.replaceState(null, '', url.toString());
     }
   }, [activeFilePath]);
 
@@ -113,8 +125,6 @@ export function App() {
     });
     setActiveFilePath(filePath);
   }, []);
-
-  const hasContent = tabs.length > 0 || activeFilePath;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
