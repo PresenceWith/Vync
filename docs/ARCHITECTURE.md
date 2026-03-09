@@ -105,7 +105,7 @@
 
 | 레이어 | 기술 | 근거 |
 |--------|------|------|
-| 프론트엔드 | Drawnix (Vite 6 + React + TypeScript + Plait) | D-002 |
+| 프론트엔드 | Vync Board (Vite 6 + React + TypeScript + Plait) | D-002 |
 | 서버 | Hub Server (Custom Node + Vite middleware + ws + FileRegistry) | D-004, D-014 |
 | 파일 감시 | chokidar | Node.js 표준, 크로스 플랫폼 |
 | 파일 포맷 | .vync (JSON) | D-005 |
@@ -291,7 +291,7 @@ useEffect(() => {
 ## 5. 프로젝트 구조
 
 ```
-Vync/                              # Drawnix 포크 (nx monorepo)
+Vync/                              # nx monorepo (Drawnix 포크 기반)
 ├── apps/
 │   └── web/                       # Vite + React 프론트엔드
 │       ├── src/
@@ -301,9 +301,9 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │       │   └── main.tsx
 │       └── vite.config.ts
 ├── packages/
-│   ├── drawnix/                   # Drawnix UI 라이브러리
+│   ├── board/                     # Vync Board UI 라이브러리 (@vync/board)
 │   │   └── src/
-│   │       ├── drawnix.tsx        # <Drawnix> 컴포넌트 (onChange, value props)
+│   │       ├── board.tsx          # <Board> 컴포넌트 (onChange, value props)
 │   │       ├── data/              # 직렬화/역직렬화 (json.ts, blob.ts, filesystem.ts)
 │   │       └── components/        # 툴바, 다이얼로그 등
 │   └── react-board/               # Plait ↔ React 브릿지
@@ -628,10 +628,10 @@ vync init /tmp/test      → /tmp/test.vync         (절대경로)
 
 ---
 
-## 8. Drawnix 이벤트 시스템 (동기화 후킹 포인트)
+## 8. Board 이벤트 시스템 (동기화 후킹 포인트)
 
 ```typescript
-<Drawnix
+<VyncBoard
   value={elements}
   viewport={viewport}
   theme={theme}

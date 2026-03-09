@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Drawnix } from '@drawnix/drawnix';
+import { VyncBoard } from '@vync/board';
 import { PlaitElement, PlaitTheme, Viewport } from '@plait/core';
 import type { VyncFile, VyncViewport, WsMessage } from '@vync/shared';
 import localforage from 'localforage';
@@ -27,8 +27,8 @@ const LEGACY_BOARD_CONTENT_KEY = 'main_board_content';
 const SYNC_DEBOUNCE_MS = 300;
 
 localforage.config({
-  name: 'Drawnix',
-  storeName: 'drawnix_store',
+  name: 'Vync',
+  storeName: 'vync_store',
   driver: [localforage.INDEXEDDB, localforage.LOCALSTORAGE],
 });
 
@@ -144,7 +144,9 @@ export function FileBoard({ filePath }: FileBoardProps) {
       };
 
       ws.onclose = () => {
-        console.log(`[vync] WebSocket disconnected for ${filePath}, reconnecting in 3s...`);
+        console.log(
+          `[vync] WebSocket disconnected for ${filePath}, reconnecting in 3s...`
+        );
         reconnectTimerRef.current = setTimeout(connect, 3000);
       };
 
@@ -168,46 +170,49 @@ export function FileBoard({ filePath }: FileBoardProps) {
     };
   }, [syncMode, filePath, fileParam]);
 
-  const handleChange = useCallback((value: unknown) => {
-    const newValue = value as BoardValue;
-    setValue(newValue);
+  const handleChange = useCallback(
+    (value: unknown) => {
+      const newValue = value as BoardValue;
+      setValue(newValue);
 
-    if (newValue.children && newValue.children.length > 0) {
-      setTutorial(false);
-    }
-
-    // Skip sync for remote updates (from WebSocket)
-    if (Date.now() < remoteUpdateUntilRef.current) {
-      return;
-    }
-
-    if (syncModeRef.current) {
-      // Debounced PUT to /api/sync
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
+      if (newValue.children && newValue.children.length > 0) {
+        setTutorial(false);
       }
-      debounceTimerRef.current = setTimeout(() => {
-        const vyncFile: VyncFile<PlaitElement> = {
-          version: 1,
-          viewport: toVyncViewport(newValue.viewport),
-          elements: newValue.children || [],
-        };
-        fetch(`/api/sync?file=${fileParam}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(vyncFile),
-        }).catch((err) => {
-          console.error('[vync] Failed to sync to server:', err);
-        });
-      }, SYNC_DEBOUNCE_MS);
-    } else {
-      // Fallback: save to localforage when not in sync mode
-      localforage.setItem(boardKey, newValue);
-    }
-  }, [fileParam, boardKey]);
+
+      // Skip sync for remote updates (from WebSocket)
+      if (Date.now() < remoteUpdateUntilRef.current) {
+        return;
+      }
+
+      if (syncModeRef.current) {
+        // Debounced PUT to /api/sync
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = setTimeout(() => {
+          const vyncFile: VyncFile<PlaitElement> = {
+            version: 1,
+            viewport: toVyncViewport(newValue.viewport),
+            elements: newValue.children || [],
+          };
+          fetch(`/api/sync?file=${fileParam}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(vyncFile),
+          }).catch((err) => {
+            console.error('[vync] Failed to sync to server:', err);
+          });
+        }, SYNC_DEBOUNCE_MS);
+      } else {
+        // Fallback: save to localforage when not in sync mode
+        localforage.setItem(boardKey, newValue);
+      }
+    },
+    [fileParam, boardKey]
+  );
 
   return (
-    <Drawnix
+    <VyncBoard
       value={value.children}
       viewport={value.viewport}
       theme={value.theme}
@@ -216,6 +221,6 @@ export function FileBoard({ filePath }: FileBoardProps) {
       afterInit={() => {
         console.log(`[vync] board initialized for ${filePath}`);
       }}
-    ></Drawnix>
+    ></VyncBoard>
   );
 }

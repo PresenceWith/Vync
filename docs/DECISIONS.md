@@ -124,7 +124,7 @@ HTTP + WebSocket + chokidar를 단일 Custom Node Server 프로세스(:3100)에 
 
 - `version`: 향후 포맷 마이그레이션 지원
 - `viewport`: 마지막 뷰 상태 복원
-- `elements`: PlaitElement[] — Drawnix/Plait 데이터 모델과 직접 호환
+- `elements`: PlaitElement[] — Plait 데이터 모델과 직접 호환
 
 | 대안 | 기각 사유 |
 |------|----------|
