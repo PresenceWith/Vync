@@ -26,6 +26,7 @@ npm run package:desktop  # Package macOS DMG
 
 **Install**: `npm install` (postinstall → marketplace 등록 + 캐시 동기화)
 **Update**: `git pull && npm install` (프로젝트 + 플러그인 동시 갱신)
+**Dev sync**: plugin 파일(commands/, skills/, agents/, hooks/) 수정 후 `bash .claude-plugin/install.sh` → 새 세션에서 반영
 
 Plugin layout (marketplace standard — root-level):
 - `commands/vync.md` — `/vync init|open|close|stop` (CLI), `/vync create|read|update` (sub-agent)

@@ -66,6 +66,9 @@
    - DECISIONS.md D-001 갱신
    - 제외된 항목을 FUTURE.md로 이동
 
+8. **플러그인 파일이 변경된 경우** (commands/, skills/, agents/, hooks/)
+   - `bash .claude-plugin/install.sh` 실행 (캐시 rsync → 새 세션에서 반영)
+
 ---
 
 ## §3 /wrap-session 추가 체크리스트
