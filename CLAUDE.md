@@ -58,6 +58,37 @@ See `docs/DECISIONS.md` for the full registry (D-001 to D-014). Key ones:
 - `docs/FUTURE.md` — Future roadmap (MCP, AI Agent, pipelines)
 - `docs/WRAP.md` — Documentation sync rules
 
+## Git Workflow
+
+**Branch model**: `main` ← `develop` ← `feat/*`
+
+```
+main        ●────────────────●────── (stable, always deployable)
+             ↑                ↑
+develop     ●──●──●──────●──●──── (integration branch)
+                  ↑       ↑
+feat/xyz        ●──●    ●──●     (short-lived feature branches)
+```
+
+**Rules (mandatory)**:
+1. **Never commit directly to `main` or `develop`** — always branch from `develop`
+2. **Branch naming**: `feat/<name>`, `fix/<name>`, `docs/<name>`, `refactor/<name>`
+3. **PR flow**: `feat/*` → `develop` (squash merge) → `main` (merge commit)
+4. **After merge**: delete the feature branch (local + remote)
+5. **Before starting work**: `git checkout develop && git pull && git checkout -b feat/<name>`
+6. **Commit messages**: `type(scope): description` (feat, fix, docs, refactor, test, chore)
+7. **Push frequency**: push feature branch before creating PR; push main+develop together after merge
+
+**PR checklist**:
+- [ ] All tests pass (`npm test`)
+- [ ] No TypeScript errors (`npx tsc --noEmit`)
+- [ ] Feature branch is up-to-date with develop (`git rebase develop` or merge)
+- [ ] Commit messages follow convention
+
+**When NOT to use a PR** (direct develop commit OK):
+- Single-file doc-only changes (typo fixes, comment updates)
+- .gitignore or config tweaks with no code impact
+
 ## Sync Mechanism
 
 ```
