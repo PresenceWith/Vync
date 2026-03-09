@@ -1,7 +1,7 @@
 ---
-description: Vync server and file management (init, open, stop, read, create, update)
+description: Vync server and file management (init, open, close, stop, read, create, update)
 allowed-tools: Bash, Read, Agent
-argument-hint: <init|open|stop|create|read|update> [args]
+argument-hint: <init|open|close|stop|create|read|update> [args]
 ---
 
 Run the Vync CLI or delegate to the vync-translator sub-agent.
@@ -10,7 +10,9 @@ Run the Vync CLI or delegate to the vync-translator sub-agent.
 
 ### CLI (direct execution)
 - `init <file>` — Create an empty .vync canvas file in CWD/.vync/
-- `open <file>` — Start the Vync server (port 3100) + open browser
+- `open <file>` — Register file with hub server and open browser. Starts server if not running.
+- `close [file]` — Unregister file from server. If no files remain, server stops.
+  - `--keep-server` — Unregister but keep server running.
 - `stop` — Stop the running Vync server
 
 For these, run via Bash:
