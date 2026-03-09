@@ -1,40 +1,39 @@
 import http from 'node:http';
 import path from 'node:path';
 import express from 'express';
-import { createFileWatcher } from './file-watcher.js';
 import { createWsServer } from './ws-handler.js';
-import { createSyncService } from './sync-service.js';
+import { FileRegistry } from './file-registry.js';
+import { addAllowedDir, createHostGuard, validateFilePath } from './security.js';
 import type { VyncFile } from '@vync/shared';
 
 const DEFAULT_PORT = 3100;
 
 export async function startServer(
-  resolvedPath: string,
   options: {
-    openBrowser?: boolean;
+    initialFile?: string;
     port?: number;
     mode?: 'development' | 'production';
     staticDir?: string;
+    openBrowser?: boolean;
   } = {}
 ) {
   const port = options.port ?? DEFAULT_PORT;
   const mode = options.mode ?? 'development';
-  const sync = createSyncService(resolvedPath);
-  try {
-    await sync.init();
-  } catch (err: any) {
-    const msg =
-      err.code === 'ENOENT'
-        ? `File not found: ${resolvedPath}`
-        : `Invalid JSON in file: ${resolvedPath}`;
-    throw new Error(`[vync] ${msg}`);
+  const registry = new FileRegistry();
+
+  // Register initial file's directory as allowed
+  if (options.initialFile) {
+    addAllowedDir(path.dirname(options.initialFile));
+    await registry.register(options.initialFile);
   }
 
   const app = express();
   app.use(express.json({ limit: '10mb' }));
 
-  // --- CORS (localhost only) ---
+  // --- Host guard (DNS rebinding prevention) ---
+  app.use(createHostGuard(port));
 
+  // --- CORS (localhost only) ---
   const allowedOrigins = [
     `http://localhost:${port}`,
     `http://127.0.0.1:${port}`,
@@ -44,7 +43,7 @@ export async function startServer(
     const origin = _req.headers.origin;
     if (origin && allowedOrigins.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Methods', 'GET, PUT');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     }
     if (_req.method === 'OPTIONS') {
@@ -54,9 +53,77 @@ export async function startServer(
     next();
   });
 
-  // --- API Routes (before Vite middleware) ---
+  // --- Health endpoint ---
+  app.get('/api/health', (_req, res) => {
+    res.json({ version: 2, mode: 'hub', fileCount: registry.listFiles().length });
+  });
 
-  app.get('/api/sync', async (_req, res) => {
+  // --- File registration API ---
+  app.get('/api/files', (_req, res) => {
+    res.json({ files: registry.listFiles() });
+  });
+
+  app.post('/api/files', async (req, res) => {
+    const { filePath } = req.body;
+    if (!filePath || typeof filePath !== 'string') {
+      res.status(400).json({ error: 'filePath required' });
+      return;
+    }
+    try {
+      const validated = await validateFilePath(filePath);
+      addAllowedDir(path.dirname(validated));
+      const alreadyRegistered = registry.getSync(validated) !== undefined;
+      await registry.register(validated);
+      res.status(alreadyRegistered ? 200 : 201).json({
+        filePath: validated,
+        status: alreadyRegistered ? 'already_registered' : 'registered',
+      });
+    } catch (err: any) {
+      if (err.message.includes('outside allowed') || err.message.includes('Only .vync')) {
+        res.status(403).json({ error: err.message });
+      } else if (err.message.includes('Maximum')) {
+        res.status(429).json({ error: err.message });
+      } else {
+        console.error('[vync] Registration error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    }
+  });
+
+  app.delete('/api/files', async (req, res) => {
+    const filePath = req.query.file as string;
+    const all = req.query.all === 'true';
+
+    if (all) {
+      await registry.shutdown();
+      res.json({ status: 'all_unregistered' });
+      return;
+    }
+
+    if (!filePath) {
+      res.status(400).json({ error: 'file query param required' });
+      return;
+    }
+    try {
+      await registry.unregister(filePath);
+      res.json({ status: 'unregistered', filePath });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // --- Sync API (file-scoped) ---
+  app.get('/api/sync', async (req, res) => {
+    const filePath = req.query.file as string;
+    if (!filePath) {
+      res.status(400).json({ error: 'file_required', files: registry.listFiles() });
+      return;
+    }
+    const sync = registry.getSync(filePath);
+    if (!sync) {
+      res.status(404).json({ error: 'File not registered', filePath });
+      return;
+    }
     try {
       const data = await sync.readFile();
       res.json(data);
@@ -67,6 +134,16 @@ export async function startServer(
   });
 
   app.put('/api/sync', async (req, res) => {
+    const filePath = req.query.file as string;
+    if (!filePath) {
+      res.status(400).json({ error: 'file_required' });
+      return;
+    }
+    const sync = registry.getSync(filePath);
+    if (!sync) {
+      res.status(404).json({ error: 'File not registered', filePath });
+      return;
+    }
     try {
       const data = req.body as VyncFile;
       if (!data || !Array.isArray(data.elements)) {
@@ -82,11 +159,9 @@ export async function startServer(
   });
 
   // --- HTTP Server ---
-
   const server = http.createServer(app);
 
   // --- Frontend serving (dev: Vite middleware, prod: static files) ---
-
   let vite: { close: () => Promise<void> } | null = null;
 
   if (mode === 'production' && options.staticDir) {
@@ -94,7 +169,7 @@ export async function startServer(
     app.get('*', (_req, res) => {
       res.sendFile(path.join(options.staticDir!, 'index.html'));
     });
-  } else {
+  } else if (mode === 'development') {
     const { createServer: createViteServer } = await import('vite');
     const projectRoot = process.env.VYNC_HOME || process.cwd();
     const webAppRoot = path.resolve(projectRoot, 'apps/web');
@@ -102,44 +177,24 @@ export async function startServer(
     vite = await createViteServer({
       configFile: path.resolve(webAppRoot, 'vite.config.ts'),
       root: webAppRoot,
-      server: {
-        middlewareMode: true,
-        hmr: { server },
-      },
+      server: { middlewareMode: true, hmr: { server } },
     });
 
     app.use(vite.middlewares);
   }
 
-  // --- WebSocket server (sync channel on /ws) ---
+  // --- WebSocket server ---
+  const ws = createWsServer(server, port, registry);
 
-  const ws = createWsServer(server, port);
-
-  // --- File watcher ---
-
-  const watcher = createFileWatcher(resolvedPath, (content) => {
-    const data = sync.handleFileChange(content);
-    if (data) {
-      ws.broadcast({ type: 'file-changed', data });
-      console.log('[vync] File changed externally, notified clients');
-    }
-  });
-
-  // --- Shutdown function ---
-
+  // --- Shutdown ---
   const shutdown = async () => {
     console.log('\n[vync] Shutting down...');
-    await watcher.close();
+    await registry.shutdown();
     ws.close();
-    if (vite) {
-      await vite.close();
-    }
+    if (vite) await vite.close();
     await new Promise<void>((resolve) => {
       const timer = setTimeout(resolve, 3000);
-      server.close(() => {
-        clearTimeout(timer);
-        resolve();
-      });
+      server.close(() => { clearTimeout(timer); resolve(); });
     });
   };
 
@@ -156,42 +211,36 @@ export async function startServer(
     server.once('error', onStartupError);
     server.listen(port, '127.0.0.1', () => {
       server.removeListener('error', onStartupError);
-      console.log(`[vync] Server running at ${url}`);
-      console.log(`[vync] Watching: ${resolvedPath}`);
-      console.log(`[vync] WebSocket: ws://localhost:${port}/ws`);
+      console.log(`[vync] Hub server running at ${url}`);
+      if (options.initialFile) {
+        console.log(`[vync] Initial file: ${options.initialFile}`);
+      }
       resolve();
     });
   });
 
-  if (options.openBrowser) {
+  if (options.openBrowser && options.initialFile) {
     const openModule = await import('open');
-    await openModule.default(url);
+    await openModule.default(`${url}/?file=${encodeURIComponent(options.initialFile)}`);
   }
 
-  return { shutdown, server, url };
+  return { shutdown, server, url, registry };
 }
 
-// Direct execution (backward compat with `npm run dev:server -- <file>`)
+// Direct execution
 const isDirectRun =
   process.argv[1]?.endsWith('server.ts') ||
   process.argv[1]?.endsWith('server.js');
 
 if (isDirectRun) {
   const filePath = process.argv[2];
-  if (!filePath) {
-    console.error('Usage: npx tsx tools/server/server.ts <file.vync>');
-    process.exit(1);
-  }
-  startServer(path.resolve(filePath))
+  const resolvedFile = filePath ? path.resolve(filePath) : undefined;
+  if (resolvedFile) addAllowedDir(path.dirname(resolvedFile));
+
+  startServer({ initialFile: resolvedFile })
     .then(({ shutdown }) => {
-      process.on('SIGINT', async () => {
-        await shutdown();
-        process.exit(0);
-      });
-      process.on('SIGTERM', async () => {
-        await shutdown();
-        process.exit(0);
-      });
+      process.on('SIGINT', async () => { await shutdown(); process.exit(0); });
+      process.on('SIGTERM', async () => { await shutdown(); process.exit(0); });
     })
     .catch((err) => {
       console.error('[vync] Fatal error:', err.message);
