@@ -109,7 +109,7 @@ Claude Code will generate a valid `.vync` mindmap file following the PlaitElemen
 Vync/
 ├── apps/web/               # Vite SPA (React 19 + Plait)
 ├── packages/
-│   ├── drawnix/             # Whiteboard UI library
+│   ├── board/               # Whiteboard UI library (@vync/board)
 │   ├── react-board/         # Plait ↔ React bridge
 │   ├── react-text/          # Text rendering (Slate)
 │   └── shared/              # Shared types and utilities (@vync/shared)

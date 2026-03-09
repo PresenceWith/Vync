@@ -1,6 +1,6 @@
 ---
 name: vync-editing
-description: Edit .vync canvas files (PlaitElement JSON). Use when creating or modifying mindmaps, flowcharts, diagrams in .vync format. Triggers on .vync file editing, mindmap/diagram creation, PlaitElement manipulation, Plait/Drawnix canvas operations.
+description: Edit .vync canvas files (PlaitElement JSON). Use when creating or modifying mindmaps, flowcharts, diagrams in .vync format. Triggers on .vync file editing, mindmap/diagram creation, PlaitElement manipulation, Plait/Vync canvas operations.
 ---
 
 # Vync Canvas Editing
