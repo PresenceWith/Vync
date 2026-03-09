@@ -1,5 +1,5 @@
 import { vyncInit } from './init.js';
-import { vyncOpen, vyncStop } from './open.js';
+import { vyncOpen, vyncStop, vyncClose } from './open.js';
 
 const USAGE = `Usage: vync <command> [options]
 
@@ -7,11 +7,15 @@ Commands:
   init <file>    Create .vync canvas in CWD/.vync/
   open <file>    Start server and open browser
                  --foreground  Run in foreground (blocking)
+  close [file]   Unregister file (or all files if no file given)
+                 --keep-server  Keep server running even if no files left
   stop           Stop the running server
 
 Examples:
   vync init plan        # creates .vync/plan.vync
   vync open plan        # opens .vync/plan.vync
+  vync close plan       # unregisters plan.vync (stops server if last file)
+  vync close            # unregisters all files and stops server
   vync stop`;
 
 async function main() {
@@ -41,6 +45,12 @@ async function main() {
         process.exit(1);
       }
       await vyncOpen(filePath, { foreground });
+      break;
+    }
+    case 'close': {
+      const keepServer = args.includes('--keep-server');
+      const filePath = args.find((a) => !a.startsWith('--'));
+      await vyncClose(filePath, { keepServer });
       break;
     }
     case 'stop': {

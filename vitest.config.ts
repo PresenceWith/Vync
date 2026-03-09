@@ -7,4 +7,8 @@ export default defineConfig({
       '@vync/shared': path.resolve(__dirname, 'packages/shared/src/index.ts'),
     },
   },
+  test: {
+    // CLI tests share ~/.vync/server.pid — must not run in parallel
+    fileParallelism: false,
+  },
 });
