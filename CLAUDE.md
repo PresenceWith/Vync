@@ -93,6 +93,8 @@ feat/xyz        ●──●    ●──●     (short-lived feature branches)
 
 ```
 .vync file ←→ chokidar ←→ Hub Server ←→ WebSocket (?file=) ←→ Browser (?file=)
+                              ↕ Hub WS (no ?file=)
+                           TabBar (multi-tab UI)
 ```
 
 - Hub Server: single server (:3100) manages multiple files via FileRegistry (→ D-014)
@@ -100,3 +102,5 @@ feat/xyz        ●──●    ●──●     (short-lived feature branches)
 - Atomic writes: tmp file → rename
 - Frontend: onChange → 300ms debounce → PUT /api/sync?file=<path>
 - WebSocket: file-scoped broadcast (A.vync changes only reach A.vync clients)
+- Hub WS: no `?file=` param → receives file registration/unregistration events for multi-tab UI
+- Multi-tab UI: TabBar component, active tab only mounted, `+` dropdown for reopening closed tabs
