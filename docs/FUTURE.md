@@ -111,7 +111,7 @@ D-008에서 Last Write Wins로 결정. 후속 개선 옵션:
 **구현 시 고려사항**:
 - `version: 1` → `version: 2` 마이그레이션 스크립트 필요
 - `lastModifiedBy` 값: `"web"` | `"claude"` | `"external"` (vim 등)
-- 서버 sync-service.ts와 프론트엔드 app.tsx의 쓰기 경로에 메타데이터 갱신 로직 추가
+- 서버 sync-service.ts와 프론트엔드 file-board.tsx의 쓰기 경로에 메타데이터 갱신 로직 추가
 - 기존 `version: 1` 파일은 메타데이터 없이 정상 동작 (하위 호환)
 
 **P1 (snapshot 기반 diff read)과의 관계**: P1은 외장 스냅샷(.lastread)으로 변경 감지, P2는 파일 내장 메타데이터. 상호 독립적이며 보완적. P1만으로 같은 세션/다음 세션 diff 가능, P2는 파일 자체의 자기 기술(self-describing) 강화.
@@ -123,7 +123,7 @@ D-008에서 Last Write Wins로 결정. 후속 개선 옵션:
 | 항목 | 설명 |
 |------|------|
 | 배포/패키징 | Electron DMG 패키징 구현 완료 (→ D-012). 추가: 코드 서명/공증, 자동 업데이트, `npx vync`/npm 발행 |
-| 다중 파일 | **1단계 완료** (Phase 8, → D-014): Hub Server + 멀티 윈도우. **2단계**: 멀티 탭 UI, 대시보드, 파일 간 링크 |
+| 다중 파일 | **1단계 완료** (Phase 8, → D-014): Hub Server + 멀티 윈도우. **2단계 설계 완료** (Phase 9): 멀티 탭 UI ([설계](plans/2026-03-09-multi-tab-ui-design.md)). 후속: 대시보드, 파일 간 링크 |
 | 보안 | 기본 보안 구현 완료 (Phase 8): validateFilePath(allowlist + .vync + realpath) + Host 헤더 검증 + CORS + WS Origin 검증. 추가: 디렉토리 접근 제한 고도화 |
 | `vync watch` | UI 없이 파일 감시 데몬 (자동 변환 파이프라인용) |
 | 업스트림 (Drawnix) 추적 | 주기적 upstream diff, 핵심 변경 최소화 |

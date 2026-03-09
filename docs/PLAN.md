@@ -7,7 +7,7 @@
 
 ## 현재 상태
 
-**Phase**: 8 완료 (멀티 파일 Hub Server 1단계) — 2026-03-09
+**Phase**: 9 설계 완료 (멀티 탭 UI) — 2026-03-09
 
 ---
 
@@ -217,7 +217,36 @@
 - [x] `vync close A.vync` → A만 해제, B는 유지
 - [x] 서버가 0개 파일일 때 자동 종료하지 않음 (idle timeout 30분 후 자동 해제)
 
-> **2단계 (멀티 탭 UI)**: 1단계 완료 후 계획 문서를 동기화하고 별도 Phase로 진행. 설계 미리보기는 `docs/plans/2026-03-09-multi-file-hub-design.md` §Stage 2 참조.
+> **2단계 (멀티 탭 UI)**: → Phase 9로 분리. 설계 완료.
+
+---
+
+## Phase 9: 멀티 탭 UI
+
+**목표**: 단일 브라우저/Electron 윈도우 안에서 여러 `.vync` 파일을 탭으로 전환하며 작업할 수 있는 UI를 구현한다.
+**의존**: Phase 8 완료
+**설계**: `docs/plans/2026-03-09-multi-tab-ui-design.md`
+
+- [ ] 9.1 WsMessage 타입 확장 — `hub-file-registered`, `hub-file-unregistered` 추가
+- [ ] 9.2 FileRegistry hub 클라이언트 관리 — hubClients Set + broadcastToHub
+- [ ] 9.3 WS handler hub 모드 — `?file=` 없을 때 hub client 등록
+- [ ] 9.4 Hub WS 서버 테스트
+- [ ] 9.5 TabBar 컴포넌트 — `tab-bar.tsx` + `tab-bar.scss`
+- [ ] 9.6 Label disambiguate 유틸리티 — `tab-utils.ts`
+- [ ] 9.7 App 리팩토링 — 탭 상태 관리 + hub WS + URL ?file= 통합
+- [ ] 9.8 Electron openFile 최적화 — 두 번째 이후 파일은 POST만 (리로드 없음)
+- [ ] 9.9 통합 E2E 검증
+- [ ] 9.10 문서 업데이트 — ARCHITECTURE.md, PLAN.md, CLAUDE.md
+
+**완료 기준**:
+- [ ] 상단 탭 바에서 등록된 파일 간 전환
+- [ ] `vync open B.vync` → 기존 브라우저 탭 바에 실시간 추가 (Hub WS)
+- [ ] 탭 닫기(×) = UI 숨기기 (서버 등록 유지)
+- [ ] + 버튼 → 등록 파일 중 탭에 없는 것 선택
+- [ ] `vync close` → 해당 탭 자동 제거
+- [ ] Electron에서 동일한 탭 UI 동작
+
+**핵심 설계 결정 (M-9~M-15)**: 상단 수평 탭 바(M-9), Active 탭만 마운트(M-10), Hub-level WebSocket(M-11), 탭 닫기 ≠ vync close(M-12), Electron = 웹 동일(M-13), CLI에서만 파일 열기(M-14), 중복 파일명 disambiguate(M-15)
 
 ---
 
