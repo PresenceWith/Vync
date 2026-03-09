@@ -24,12 +24,15 @@ npm run package:desktop  # Package macOS DMG
 
 ## Claude Code Plugin
 
-The plugin is in `.claude-plugin/`. Install with `bash .claude-plugin/install.sh`.
+**Marketplace install**: `/plugin marketplace add PresenceWith/Vync` → `/plugin install vync@PresenceWith-Vync`
+**Dev install**: `bash .claude-plugin/install.sh`
 
-- `/vync init|open|close|stop` — CLI operations (direct execution)
-- `/vync create|read|update` — AI diagram operations (delegated to `vync-translator` sub-agent)
-- `vync-editing` skill — `.vync` file editing guide with validation
-- `vync-translator` agent — Prose ↔ .vync JSON translator (context window protection)
+Plugin layout (marketplace standard — root-level):
+- `commands/vync.md` — `/vync init|open|close|stop` (CLI), `/vync create|read|update` (sub-agent)
+- `skills/vync-editing/` — `.vync` file editing guide with validation
+- `agents/vync-translator.md` — Prose ↔ .vync JSON translator (context window protection)
+- `hooks/hooks.json` — PostToolUse (.vync auto-validation), SessionEnd (server cleanup)
+- `.claude-plugin/` — plugin.json, marketplace.json, install.sh, uninstall.sh
 
 ## Editing .vync Files
 

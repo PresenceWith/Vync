@@ -343,19 +343,23 @@ Vync/                              # nx monorepo (Drawnix 포크 기반)
 │           └── open.test.ts       # smart restart + vyncStop 유닛 테스트
 ├── bin/
 │   └── vync.js                    # CLI 진입점 (CommonJS, tsx spawn) [VYNC 추가]
-├── .claude-plugin/                # Claude Code 플러그인 (marketplace 표준) [VYNC 추가]
+├── .claude-plugin/                # Claude Code 플러그인 메타 (marketplace 표준) [VYNC 추가]
 │   ├── plugin.json                # 플러그인 메타데이터
-│   ├── install.sh                 # ~/.claude/에 심볼릭 링크 + 설정 머지
-│   ├── uninstall.sh               # 정리
-│   ├── hooks.json                 # PostToolUse + SessionEnd 설정
-│   ├── skills/
-│   │   └── vync-editing/          # 편집 가이드 Skill
-│   │       ├── SKILL.md
-│   │       ├── references/        # 상세 가이드 (mindmap, geometry, arrow-line, coordinates)
-│   │       ├── scripts/           # validate.js, generate-id.js
-│   │       └── assets/            # schema.json, 예시 .vync 파일
-│   ├── agents/                    # 커스텀 sub-agent (vync-translator)   [VYNC 추가: Phase 7]
-│   └── commands/                  # /vync 슬래시 커맨드 (create/read/update 통합)
+│   ├── marketplace.json           # 마켓플레이스 등록 정보
+│   ├── install.sh                 # 개발자 설치 (심볼릭 링크 + 설정 머지)
+│   └── uninstall.sh               # 정리
+├── commands/                      # /vync 슬래시 커맨드 (marketplace 표준 위치) [VYNC 추가]
+│   └── vync.md
+├── skills/                        # 편집 가이드 Skill (marketplace 표준 위치)  [VYNC 추가]
+│   └── vync-editing/
+│       ├── SKILL.md
+│       ├── references/            # 상세 가이드 (mindmap, geometry, arrow-line, coordinates)
+│       ├── scripts/               # validate.js, generate-id.js
+│       └── assets/                # schema.json, 예시 .vync 파일
+├── agents/                        # 커스텀 sub-agent (marketplace 표준 위치)  [VYNC 추가: Phase 7]
+│   └── vync-translator.md
+├── hooks/                         # PostToolUse + SessionEnd (marketplace 표준 위치) [VYNC 추가]
+│   └── hooks.json
 ├── docs/                          # 프로젝트 문서
 ├── examples/                      # .vync 예시 파일                [VYNC 추가]
 ├── electron-builder.yml           # Electron 패키징 설정 (macOS DMG)  [VYNC 추가]
