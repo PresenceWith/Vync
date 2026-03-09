@@ -44,6 +44,7 @@ Thumbs.db
 # Vync
 *.vync
 .vync/
+*.lastread
 
 # Electron
 dist/packages/
