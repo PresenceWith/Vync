@@ -172,6 +172,16 @@
 **완료 기준**:
 - [x] vync-translator sub-agent가 create/read/update 작업 수행 가능
 - [x] 메인 세션이 prose만 교환하여 context window 보호
+
+### 7-P1: Diff-Aware Read
+
+**목표**: `/vync read` 시 마지막 읽기 이후 변경사항을 diff로 보고하여 "무엇이 바뀌었는지" 인식 가능하게 한다.
+**설계**: `docs/plans/2026-03-09-diff-aware-read.md`
+
+- [x] 7-P1.1 `.gitignore`에 `*.lastread` 추가
+- [x] 7-P1.2 vync-translator 에이전트 Read 절차에 스냅샷 비교 로직 추가
+- [x] 7-P1.3 vync 커맨드 Read 섹션에 diff 컨텍스트 반영
+- [x] 7-P1.4 설계문서 데이터 흐름 업데이트
 - [x] `/vync create` → sub-agent → 한 줄 요약 반환 흐름 동작
 - [x] Install script가 에이전트 파일을 `~/.claude/agents/`에 설치
 

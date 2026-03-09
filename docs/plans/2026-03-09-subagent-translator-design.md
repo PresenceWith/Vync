@@ -79,13 +79,16 @@
   → 메인 세션: 한 줄 요약 전달, 대화 계속
 ```
 
-**읽기 (Read):**
+**읽기 (Read) — Diff-Aware:**
 ```
-사용자: "현재 마인드맵 확인해줘"
+사용자: "현재 마인드맵 확인해줘" (또는 "웹에서 수정했어, 뭐가 바뀌었는지 봐줘")
   → 메인 세션: 파일경로 해결 → Agent tool: vync-translator spawn
-    → sub-agent: .vync 파일 Read → JSON 파싱 → 구조 분석 (2단계 깊이)
-    → sub-agent 반환: "mindmap: 프로젝트 > [기획(시장조사, 인터뷰), 개발(FE, BE), 출시]"
-  → 메인 세션: prose 전달, 대화 계속
+    → sub-agent: .vync 파일 Read → .lastread 스냅샷 확인
+    → [스냅샷 있음] 현재 vs 스냅샷 비교 → diff 포함 요약
+    → [스냅샷 없음] 구조 분석 (2단계 깊이)
+    → sub-agent 반환: "mindmap: 프로젝트 > [기획, 개발, +테스팅] (변경: 테스팅 추가)"
+    → .lastread 스냅샷 갱신
+  → 메인 세션: prose + diff 전달, 대화 계속
 ```
 
 **업데이트 (Update):**
