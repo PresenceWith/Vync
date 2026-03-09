@@ -79,6 +79,18 @@ feat/xyz        ●──●    ●──●     (short-lived feature branches)
 6. **Commit messages**: `type(scope): description` (feat, fix, docs, refactor, test, chore)
 7. **Push frequency**: push feature branch before creating PR; push main+develop together after merge
 
+**develop → main 머지 절차 (반드시 준수)**:
+1. PR이 develop에 머지된 후, main을 업데이트할 때는 **반드시 `develop` 브랜치 자체를 main에 머지**한다
+2. 절대로 피처 커밋을 main에 직접 cherry-pick하거나 독립적으로 머지하지 않는다
+3. 구체적 명령:
+   ```bash
+   git checkout main && git pull
+   git merge develop -m "merge: <설명> into main"
+   git push origin main
+   git checkout develop
+   ```
+4. 이 절차를 생략하면 main과 develop의 히스토리가 분기되어 "unmerged" 상태가 된다
+
 **PR checklist**:
 - [ ] All tests pass (`npm test`)
 - [ ] No TypeScript errors (`npx tsc --noEmit`)
