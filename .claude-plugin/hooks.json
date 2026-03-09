@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f \"$HOME/.vync/server.pid\" ] && { kill $(cat \"$HOME/.vync/server.pid\") 2>/dev/null; rm -f \"$HOME/.vync/server.pid\"; }; exit 0"
+            "command": "curl -s -X DELETE 'http://localhost:3100/api/files?all=true' 2>/dev/null; [ -f \"$HOME/.vync/server.pid\" ] && { pid=$(node -e \"try{console.log(JSON.parse(require('fs').readFileSync('$HOME/.vync/server.pid','utf8')).pid)}catch{const l=require('fs').readFileSync('$HOME/.vync/server.pid','utf8').split('\\n');console.log(l[0])}\" 2>/dev/null || head -1 \"$HOME/.vync/server.pid\"); kill \"$pid\" 2>/dev/null; rm -f \"$HOME/.vync/server.pid\"; }; exit 0"
           }
         ]
       }
