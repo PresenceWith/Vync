@@ -52,7 +52,21 @@ if [ -f "$SETTINGS" ]; then
   echo "  [ok] Removed marketplace, plugin, VYNC_HOME, and hooks"
 fi
 
-# 3. Remove plugin cache
+# 3. Remove from installed_plugins.json
+INSTALLED="$CLAUDE_DIR/plugins/installed_plugins.json"
+if [ -f "$INSTALLED" ]; then
+  node -e "
+  const fs = require('fs');
+  const data = JSON.parse(fs.readFileSync('$INSTALLED', 'utf-8'));
+  if (data.plugins) {
+    delete data.plugins['vync@PresenceWith-Vync'];
+  }
+  fs.writeFileSync('$INSTALLED', JSON.stringify(data, null, 2));
+  "
+  echo "  [ok] Removed from installed_plugins.json"
+fi
+
+# 4. Remove plugin cache (handles both symlinks and real directories)
 rm -rf "$CLAUDE_DIR/plugins/cache/PresenceWith-Vync"
 echo "  [ok] Removed plugin cache"
 

@@ -58,7 +58,7 @@ echo "  [ok] Marketplace: PresenceWith-Vync (local: $PROJECT_ROOT)"
 echo "  [ok] Plugin: vync@PresenceWith-Vync enabled"
 echo "  [ok] Env: VYNC_HOME=$PROJECT_ROOT"
 
-# 3. Sync plugin cache (ensures cache matches local project after git pull)
+# 3. Sync plugin cache via rsync (Claude Code copies symlinks to real dirs, so rsync is required)
 VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$PROJECT_ROOT/.claude-plugin/plugin.json','utf8')).version)")
 CACHE_BASE="$CLAUDE_DIR/plugins/cache/PresenceWith-Vync/vync"
 
@@ -76,6 +76,8 @@ fi
 
 # Sync current version to cache
 CACHE_DIR="$CACHE_BASE/$VERSION"
+# Remove stale symlink if exists (from previous symlink attempt)
+[ -L "$CACHE_DIR" ] && rm "$CACHE_DIR"
 mkdir -p "$CACHE_DIR"
 rsync -a --delete \
   --exclude 'node_modules' \
@@ -88,7 +90,29 @@ rsync -a --delete \
   "$PROJECT_ROOT/" "$CACHE_DIR/"
 echo "  [ok] Cache synced: v$VERSION"
 
-# 4. Done
+# 4. Update installed_plugins.json (Claude Code reads active version from here)
+INSTALLED="$CLAUDE_DIR/plugins/installed_plugins.json"
+node -e "
+const fs = require('fs');
+const path = '$INSTALLED';
+let data = { version: 2, plugins: {} };
+if (fs.existsSync(path)) {
+  try { data = JSON.parse(fs.readFileSync(path, 'utf-8')); } catch {}
+}
+if (!data.plugins) data.plugins = {};
+const now = new Date().toISOString();
+data.plugins['vync@PresenceWith-Vync'] = [{
+  scope: 'user',
+  installPath: '$CACHE_DIR',
+  version: '$VERSION',
+  installedAt: (data.plugins['vync@PresenceWith-Vync']?.[0]?.installedAt) || now,
+  lastUpdated: now
+}];
+fs.writeFileSync(path, JSON.stringify(data, null, 2));
+"
+echo "  [ok] installed_plugins.json: vync@PresenceWith-Vync v$VERSION"
+
+# 5. Done
 echo ""
 echo "[vync] Setup complete! Restart Claude Code to activate."
 echo ""
