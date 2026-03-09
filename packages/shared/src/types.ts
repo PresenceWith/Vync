@@ -12,6 +12,8 @@ export interface VyncFile<T = unknown> {
 }
 
 export interface WsMessage<T = unknown> {
-  type: 'file-changed' | 'connected';
+  type: 'file-changed' | 'connected' | 'file-closed' | 'file-deleted' | 'error';
+  filePath?: string;
   data?: VyncFile<T>;
+  code?: string;
 }

@@ -34,9 +34,10 @@ afterEach(async () => {
 describe('writeServerInfo + readServerInfo', () => {
   it('round-trips ServerInfo correctly', async () => {
     const info: ServerInfo = {
+      version: 2,
       pid: 12345,
       mode: 'daemon',
-      filePath: '/tmp/test.vync',
+      port: 3100,
     };
     await writeServerInfo(info);
     const result = await readServerInfo();
@@ -45,17 +46,18 @@ describe('writeServerInfo + readServerInfo', () => {
 
   it('handles all three modes', async () => {
     for (const mode of ['daemon', 'electron', 'foreground'] as const) {
-      await writeServerInfo({ pid: 99, mode, filePath: '/tmp/x.vync' });
+      await writeServerInfo({ version: 2, pid: 99, mode, port: 3100 });
       const result = await readServerInfo();
       expect(result?.mode).toBe(mode);
     }
   });
 
-  it('handles filePath with spaces', async () => {
+  it('handles custom port', async () => {
     const info: ServerInfo = {
+      version: 2,
       pid: 42,
       mode: 'daemon',
-      filePath: '/Users/test user/my project/plan.vync',
+      port: 4200,
     };
     await writeServerInfo(info);
     const result = await readServerInfo();
@@ -76,11 +78,11 @@ describe('readServerInfo edge cases', () => {
     await expect(fs.access(REAL_PID_FILE)).rejects.toThrow();
   });
 
-  it('returns null and cleans up two-line PID format', async () => {
+  it('reads legacy two-line PID format as version 1', async () => {
     await fs.mkdir(REAL_VYNC_DIR, { recursive: true });
     await fs.writeFile(REAL_PID_FILE, '12345\ndaemon', 'utf-8');
-    expect(await readServerInfo()).toBeNull();
-    await expect(fs.access(REAL_PID_FILE)).rejects.toThrow();
+    const result = await readServerInfo();
+    expect(result).toEqual({ version: 1, pid: 12345, mode: 'daemon', port: 3100 });
   });
 
   it('returns null for empty file', async () => {
@@ -100,9 +102,10 @@ describe('vyncStop', () => {
   it('handles stale PID (process already gone)', async () => {
     // Write a PID that doesn't exist (very high number)
     await writeServerInfo({
+      version: 2,
       pid: 2147483647,
       mode: 'daemon',
-      filePath: '/tmp/test.vync',
+      port: 3100,
     });
     await vyncStop();
     // PID file should be cleaned up
@@ -116,9 +119,10 @@ describe('vyncStop', () => {
     child.unref();
 
     await writeServerInfo({
+      version: 2,
       pid,
       mode: 'daemon',
-      filePath: '/tmp/test.vync',
+      port: 3100,
     });
 
     await vyncStop();
