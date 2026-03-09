@@ -14,21 +14,32 @@
 │  Claude Code  │                    │  .vync JSON 파일  │                    │  웹 브라우저    │
 │  (JSON 편집)   │ ── Write/Edit ──→ │  (Source of Truth) │ ── chokidar ──→   │  Vync UI      │
 │              │                    │                    │                    │  (캔버스 편집)  │
-│              │ ←── Read ──────── │                    │ ←── auto-save ── │              │
+│              │ ←── Read ──────── │                    │ ←── auto-save ── │  ?file=<path> │
 └──────────────┘                    └──────────────────┘                    └──────────────┘
-                                           ↕ WebSocket
-                                    ┌──────────────────┐
-                                    │  Custom Node      │
-                                    │  Server (:3100)   │
-                                    │  HTTP + WS +      │
-                                    │  chokidar +       │
-                                    │  Vite middleware   │
-                                    └──────────────────┘
+                                           ↕ WebSocket (?file=<path>)
+                                    ┌──────────────────────────────┐
+                                    │  Hub Server (:3100)           │
+                                    │  ┌──────────────────────────┐│
+                                    │  │      FileRegistry         ││
+                                    │  │  ┌─ A.vync ─────────┐    ││
+                                    │  │  │ SyncService       │    ││
+                                    │  │  │ FileWatcher       │    ││
+                                    │  │  │ WS Clients        │    ││
+                                    │  │  └───────────────────┘    ││
+                                    │  │  ┌─ B.vync ─────────┐    ││
+                                    │  │  │ SyncService       │    ││
+                                    │  │  │ FileWatcher       │    ││
+                                    │  │  │ WS Clients        │    ││
+                                    │  │  └───────────────────┘    ││
+                                    │  └──────────────────────────┘│
+                                    │  HTTP + WS + Vite middleware  │
+                                    └──────────────────────────────┘
 ```
 
-**핵심 원칙** (→ D-004):
+**핵심 원칙** (→ D-004, D-014):
 - 파일 = Source of Truth — 어떤 프로세스든 파일만 수정하면 반영됨
-- 단일 프로세스 — HTTP, WebSocket, chokidar가 하나의 Custom Node Server에 통합 (dev: Vite middleware, prod: 정적 파일 서빙)
+- 단일 프로세스 — HTTP, WebSocket, chokidar가 하나의 Hub Server에 통합 (dev: Vite middleware, prod: 정적 파일 서빙)
+- 멀티 파일 — FileRegistry가 파일별 SyncService/FileWatcher/WS 클라이언트를 관리 (→ D-014)
 - Claude Code 전용이 아님 — vim, VS Code, 스크립트 등 어떤 도구로든 동작
 
 ---
@@ -39,9 +50,9 @@
 
 ```
 외부에서 .vync 파일 수정 (Claude Code, vim 등)
-  → chokidar 감지 (300ms 디바운싱)
-  → content hash 비교 (에코 방지, → D-009)
-  → 실제 변경이면 WebSocket으로 전송
+  → FileRegistry가 해당 파일의 FileWatcher를 통해 chokidar 감지 (300ms 디바운싱)
+  → 파일별 SyncService에서 content hash 비교 (에코 방지, → D-009)
+  → 실제 변경이면 해당 파일의 WS 클라이언트에만 브로드캐스트
   → 프론트엔드가 PlaitElement[] 교체
   → 캔버스 자동 업데이트 (조용히, → D-007)
 ```
@@ -52,7 +63,8 @@
 캔버스에서 노드 편집
   → Plait onChange 이벤트
   → 디바운싱 (300ms)
-  → API 호출 (PUT /api/sync)
+  → API 호출 (PUT /api/sync?file=<absolutePath>)
+  → FileRegistry가 해당 파일의 SyncService를 조회
   → 서버가 원자적 쓰기 (tmp + rename)
   → content hash 업데이트 (에코 방지)
 ```
@@ -69,6 +81,24 @@
 
 단일 사용자 시나리오에서는 동시 편집이 드물다. 발생하더라도 양쪽이 즉시 최종 상태로 동기화되므로 사용자가 곧바로 재편집 가능.
 
+### 2.4 API 엔드포인트 (→ D-014)
+
+| 엔드포인트 | 메서드 | 설명 |
+|-----------|--------|------|
+| `/api/health` | GET | 서버 상태 (`{ version: 2, mode: 'hub', fileCount }`) |
+| `/api/files` | GET | 등록된 파일 목록 (`{ files: ['/path/to/a.vync', ...] }`) |
+| `/api/files` | POST | 파일 등록 (`{ filePath }` → `201 Created` / `200 OK`) |
+| `/api/files?file=<path>` | DELETE | 특정 파일 해제 |
+| `/api/files?all=true` | DELETE | 전체 파일 해제 |
+| `/api/sync?file=<path>` | GET | 파일 내용 읽기 (VyncFile JSON) |
+| `/api/sync?file=<path>` | PUT | 파일 내용 쓰기 (VyncFile JSON body) |
+
+### 2.5 WebSocket 프로토콜 (→ D-014)
+
+- **연결**: `ws://localhost:3100/ws?file=<absolutePath>` — `?file=` 필수
+- **메시지 타입**: `connected`, `file-changed`, `file-closed`, `file-deleted`, `error`
+- **파일 스코프 격리**: A.vync의 변경 알림은 A.vync WS 클라이언트에만 전송
+
 ---
 
 ## 3. 기술 스택
@@ -76,7 +106,7 @@
 | 레이어 | 기술 | 근거 |
 |--------|------|------|
 | 프론트엔드 | Drawnix (Vite 6 + React + TypeScript + Plait) | D-002 |
-| 서버 | Custom Node Server + Vite middleware mode + ws (WebSocket) | D-004 |
+| 서버 | Hub Server (Custom Node + Vite middleware + ws + FileRegistry) | D-004, D-014 |
 | 파일 감시 | chokidar | Node.js 표준, 크로스 플랫폼 |
 | 파일 포맷 | .vync (JSON) | D-005 |
 | CLI | Node.js (bin 스크립트) | D-006 |
@@ -266,7 +296,8 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │   └── web/                       # Vite + React 프론트엔드
 │       ├── src/
 │       │   ├── app/
-│       │   │   └── app.tsx        # 메인 앱 컴포넌트               [VYNC 수정: localforage → API]
+│       │   │   ├── app.tsx        # 메인 앱 컴포넌트               [VYNC 수정: localforage → API]
+│       │   │   └── file-board.tsx # FileBoard — ?file= URL 파라미터로 파일 로드  [VYNC 추가: Phase 8]
 │       │   └── main.tsx
 │       └── vite.config.ts
 ├── packages/
@@ -289,14 +320,16 @@ Vync/                              # Drawnix 포크 (nx monorepo)
 │   │   ├── main.ts                # Electron main process (단일 인스턴스, 파일 연결, dev/prod) [VYNC 추가]
 │   │   └── preload.ts             # preload (window.vyncDesktop 플래그) [VYNC 추가]
 │   ├── server/
-│   │   ├── server.ts              # Custom Node Server (startServer export + 직접 실행 가드)
-│   │   ├── file-watcher.ts        # chokidar 파일 감시
-│   │   ├── sync-service.ts        # 동기화 로직 (에코 방지 + 원자적 쓰기 + JSON 유효성 검증)
-│   │   └── ws-handler.ts          # WebSocket 메시지 핸들러
+│   │   ├── server.ts              # Hub Server (startServer export + FileRegistry 기반)     [VYNC 수정: Phase 8]
+│   │   ├── file-registry.ts       # FileRegistry — 파일별 SyncService/Watcher/WS 관리      [VYNC 추가: Phase 8]
+│   │   ├── security.ts            # validateFilePath + hostGuard (LFI/DNS rebinding 방지)  [VYNC 추가: Phase 8]
+│   │   ├── file-watcher.ts        # chokidar 파일 감시 (unlink 이벤트 포함)
+│   │   ├── sync-service.ts        # 동기화 로직 (에코 방지 + 원자적 쓰기 + drain())
+│   │   └── ws-handler.ts          # WebSocket 메시지 핸들러 (파일 스코프 라우팅, ?file=)
 │   └── cli/
-│       ├── main.ts                # CLI 진입점 (subcommand 라우팅)
+│       ├── main.ts                # CLI 진입점 (init/open/close/stop 라우팅)              [VYNC 수정: Phase 8]
 │       ├── init.ts                # vync init: 빈 .vync 파일 생성
-│       ├── open.ts                # vync open/stop: 서버 시작/종료 + PID 관리
+│       ├── open.ts                # vync open/close/stop: 허브 모드 + PID JSON 포맷       [VYNC 수정: Phase 8]
 │       ├── resolve.ts             # resolveVyncPath(): 경로 해석 (bare name → .vync/ 하위)
 │       └── __tests__/
 │           ├── init.test.ts       # init 유닛 테스트
@@ -375,23 +408,25 @@ T3: 서버가 hash 저장 완료
 - 파일 읽기 시 JSON.parse 실패하면 이전 유효한 상태 유지
 - 에러 로그를 서버 콘솔에 출력
 
-### 6.5 보안
+### 6.5 보안 (→ D-014 M-8)
 
 로컬 전용 도구이므로 최소한의 보안 조치:
 
 - **네트워크 바인딩**: 서버는 `127.0.0.1` (localhost)에만 바인딩. 외부 네트워크에서 접근 불가.
 - **CORS**: `Access-Control-Allow-Origin: http://localhost:3100` 으로 제한.
-- **파일 접근 범위**: CLI에서 지정한 .vync 파일만 읽기/쓰기. 서버가 임의 경로에 접근하지 않음.
-- **WebSocket**: `ws://localhost:3100` 에서만 수신. Origin 헤더 검증.
+- **Host 헤더 검증**: `createHostGuard()` — DNS rebinding 방지. `localhost:3100`/`127.0.0.1:3100`만 허용.
+- **파일 경로 검증**: `validateFilePath()` — allowlist 디렉토리 + `.vync` 확장자 + `realpath` 심볼릭 링크 해석. LFI(Local File Inclusion) 방지.
+- **WebSocket**: `ws://localhost:3100/?file=<path>` — `?file=` 파라미터 필수. 미등록 파일 접근 거부.
 
 ### 6.6 초기화/종료 흐름
 
-**PID 파일 포맷** (`~/.vync/server.pid`):
+**PID 파일 포맷** (`~/.vync/server.pid`) — JSON (→ D-014 M-6):
+```json
+{ "version": 2, "pid": 12345, "mode": "daemon", "port": 3100 }
 ```
-<pid>
-<mode>        # daemon | electron | foreground
-<file-path>   # 서빙 중인 .vync 파일 절대경로
-```
+- `version: 2` — 멀티 파일 허브 모드 식별
+- `mode`: `daemon` | `electron` | `foreground`
+- `port`: 서버 포트 (레거시 3줄 포맷 하위 호환 읽기 지원)
 
 **경로 해석 (`resolveVyncPath`)** — bare filename은 `.vync/` 하위 디렉터리:
 ```
@@ -401,19 +436,25 @@ vync init /tmp/test      → /tmp/test.vync         (절대경로)
 ```
 `bin/vync.js`가 `VYNC_CALLER_CWD` 환경변수로 호출자의 원래 CWD를 전달.
 
-**서버 시작 (`vync open <file>`)** — 스마트 재시작 + Electron 우선, 폴백으로 tsx daemon:
+**서버 시작 (`vync open <file>`)** — 허브 모드 (2-state 감지):
 ```
 1. 경로 해석 (resolveVyncPath) → 파일 존재 확인 → 없으면 에러 메시지 + 종료
-2. 기존 서버 상태 확인 (3-state 감지):
-   - PID 파일 읽기 → 프로세스 존재 확인 (kill 0) → HTTP 헬스체크 (HEAD /api/sync)
-   - none: 서버 없음 → 정상 시작
-   - same-file: 같은 파일 서빙 중 → 브라우저만 열기 (Electron이면 로그만 출력)
-   - different-file: 다른 파일 서빙 중 → 자동 stop → 새 파일로 시작
+2. 기존 서버 상태 확인 (2-state):
+   - PID 파일 읽기 → 프로세스 존재 확인 (kill 0) → HTTP 헬스체크 (GET /api/health)
+   - running: 서버 실행 중 → POST /api/files로 파일 등록 + 브라우저 열기
+   - not-running: 서버 없음 → 새 서버 시작
 3. [Electron 모드 — 기본] electron dist/electron/main.js <file>을 detached spawn
    [tsx 데몬 모드 — 폴백] tsx로 server.ts를 detached 자식 프로세스로 spawn
    [포그라운드 모드 — --foreground] 현재 프로세스 내에서 startServer() 직접 호출
 4. 300ms 간격 폴링으로 서버 준비 대기 (최대 10초)
-5. PID 파일에 ServerInfo 기록 (pid/mode/filePath)
+5. PID 파일에 ServerInfo JSON 기록
+```
+
+**파일 해제 (`vync close [file]`)** — 허브 모드:
+```
+1. 특정 파일: DELETE /api/files?file=<path> → 해당 파일만 해제
+2. 전체: DELETE /api/files?all=true → 모든 파일 해제
+3. 파일이 0개이면 서버 종료 (--keep-server로 방지 가능)
 ```
 
 **서버 종료 (`vync stop` / Ctrl+C / SIGTERM)**:
@@ -604,4 +645,4 @@ vync init /tmp/test      → /tmp/test.vync         (절대경로)
 포크 시 수정 사항:
 1. localforage 저장소 → API Route 호출로 교체
 2. WebSocket 리스너 추가 → 외부 변경 시 Plait board 갱신
-3. onChange → debounce(300ms) → PUT /api/sync
+3. onChange → debounce(300ms) → PUT /api/sync?file=<path>
