@@ -19,6 +19,24 @@ export class FileRegistry extends EventEmitter {
   static MAX_FILES = Number(process.env.VYNC_MAX_FILES) || 50;
   private files = new Map<string, FileEntry>();
   private pendingUnregister = new Set<string>();
+  private hubClients = new Set<WebSocket>();
+
+  addHubClient(ws: WebSocket): void {
+    this.hubClients.add(ws);
+  }
+
+  removeHubClient(ws: WebSocket): void {
+    this.hubClients.delete(ws);
+  }
+
+  private broadcastToHub(message: WsMessage): void {
+    const data = JSON.stringify(message);
+    for (const client of this.hubClients) {
+      if (client.readyState === 1 /* WebSocket.OPEN */) {
+        client.send(data);
+      }
+    }
+  }
 
   async register(filePath: string): Promise<void> {
     const validated = await validateFilePath(filePath);
@@ -35,7 +53,9 @@ export class FileRegistry extends EventEmitter {
     }
 
     if (this.files.size >= FileRegistry.MAX_FILES) {
-      throw new Error(`Maximum number of tracked files (${FileRegistry.MAX_FILES}) reached`);
+      throw new Error(
+        `Maximum number of tracked files (${FileRegistry.MAX_FILES}) reached`
+      );
     }
 
     // Claim slot synchronously
@@ -53,11 +73,18 @@ export class FileRegistry extends EventEmitter {
         onChange: (content) => {
           const data = entry.sync.handleFileChange(content);
           if (data) {
-            this.broadcastToFile(validated, { type: 'file-changed', filePath: validated, data });
+            this.broadcastToFile(validated, {
+              type: 'file-changed',
+              filePath: validated,
+              data,
+            });
           }
         },
         onDelete: () => {
-          this.broadcastToFile(validated, { type: 'file-deleted', filePath: validated });
+          this.broadcastToFile(validated, {
+            type: 'file-deleted',
+            filePath: validated,
+          });
         },
       });
     } catch (err) {
@@ -66,6 +93,7 @@ export class FileRegistry extends EventEmitter {
     }
 
     this.emit('registered', validated);
+    this.broadcastToHub({ type: 'hub-file-registered', filePath: validated });
   }
 
   async unregister(filePath: string): Promise<void> {
@@ -98,6 +126,7 @@ export class FileRegistry extends EventEmitter {
     }
 
     this.emit('unregistered', filePath);
+    this.broadcastToHub({ type: 'hub-file-unregistered', filePath });
     if (this.files.size === 0) {
       this.emit('empty');
     }
@@ -147,6 +176,10 @@ export class FileRegistry extends EventEmitter {
     for (const fp of files) {
       await this.unregister(fp).catch(() => {});
     }
+    for (const ws of this.hubClients) {
+      ws.close(1001, 'Server shutting down');
+    }
+    this.hubClients.clear();
   }
 
   private startIdleTimer(filePath: string): void {

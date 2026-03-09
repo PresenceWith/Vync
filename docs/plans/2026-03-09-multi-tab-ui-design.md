@@ -1,7 +1,7 @@
 # Design: Multi-Tab UI (Phase 8 Stage 2)
 
 **Date:** 2026-03-09
-**Status:** Proposed
+**Status:** Implemented
 **Depends on:** Phase 8 Stage 1 (완료)
 
 ## Goal

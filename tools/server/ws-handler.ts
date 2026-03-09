@@ -3,7 +3,11 @@ import type { Server } from 'node:http';
 import type { WsMessage } from '@vync/shared';
 import type { FileRegistry } from './file-registry.js';
 
-export function createWsServer(server: Server, port: number, registry: FileRegistry) {
+export function createWsServer(
+  server: Server,
+  port: number,
+  registry: FileRegistry
+) {
   const wss = new WebSocketServer({ noServer: true });
   const clientFiles = new Map<WebSocket, string>();
 
@@ -31,35 +35,55 @@ export function createWsServer(server: Server, port: number, registry: FileRegis
     });
   });
 
-  wss.on('connection', (ws: WebSocket, _request: any, filePath: string | null) => {
-    if (!filePath) {
-      ws.send(JSON.stringify({ type: 'error', code: 'FILE_REQUIRED' } satisfies WsMessage));
-      ws.close(4400, 'file parameter required');
-      return;
-    }
+  wss.on(
+    'connection',
+    (ws: WebSocket, _request: any, filePath: string | null) => {
+      if (!filePath) {
+        // Hub mode: client receives file registration/unregistration events
+        registry.addHubClient(ws);
+        ws.send(
+          JSON.stringify({
+            type: 'connected',
+            data: { files: registry.listFiles() },
+          } satisfies WsMessage)
+        );
 
-    // Check if file is registered
-    if (!registry.getSync(filePath)) {
-      ws.send(JSON.stringify({ type: 'error', code: 'FILE_NOT_FOUND' } satisfies WsMessage));
-      ws.close(4404, 'File not registered');
-      return;
-    }
-
-    clientFiles.set(ws, filePath);
-    registry.addClient(filePath, ws);
-
-    console.log(`[vync] WS client connected: ${filePath}`);
-    ws.send(JSON.stringify({ type: 'connected', filePath } satisfies WsMessage));
-
-    ws.on('close', () => {
-      const fp = clientFiles.get(ws);
-      if (fp) {
-        registry.removeClient(fp, ws);
-        clientFiles.delete(ws);
+        ws.on('close', () => {
+          registry.removeHubClient(ws);
+        });
+        return;
       }
-      console.log('[vync] WS client disconnected');
-    });
-  });
+
+      // Check if file is registered
+      if (!registry.getSync(filePath)) {
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            code: 'FILE_NOT_FOUND',
+          } satisfies WsMessage)
+        );
+        ws.close(4404, 'File not registered');
+        return;
+      }
+
+      clientFiles.set(ws, filePath);
+      registry.addClient(filePath, ws);
+
+      console.log(`[vync] WS client connected: ${filePath}`);
+      ws.send(
+        JSON.stringify({ type: 'connected', filePath } satisfies WsMessage)
+      );
+
+      ws.on('close', () => {
+        const fp = clientFiles.get(ws);
+        if (fp) {
+          registry.removeClient(fp, ws);
+          clientFiles.delete(ws);
+        }
+        console.log('[vync] WS client disconnected');
+      });
+    }
+  );
 
   return {
     close() {

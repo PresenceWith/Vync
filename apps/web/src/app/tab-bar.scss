@@ -1,0 +1,86 @@
+.vync-tab-bar {
+  display: flex;
+  align-items: stretch;
+  height: 36px;
+  background: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+  overflow-x: auto;
+  flex-shrink: 0;
+
+  &::-webkit-scrollbar { height: 0; }
+}
+
+.vync-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 6px;
+  cursor: pointer;
+  border-right: 1px solid #ddd;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #666;
+  user-select: none;
+  min-width: 0;
+
+  &:hover { background: #e8e8e8; }
+
+  &--active {
+    background: #fff;
+    color: #333;
+    border-bottom: 2px solid #4a9eff;
+  }
+}
+
+.vync-tab__close {
+  opacity: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #999;
+
+  .vync-tab:hover &,
+  .vync-tab--active & { opacity: 1; }
+  &:hover { background: #ddd; color: #333; }
+}
+
+.vync-tab-add {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  cursor: pointer;
+  color: #999;
+  font-size: 16px;
+  position: relative;
+
+  &:hover { color: #333; background: #e8e8e8; }
+}
+
+.vync-tab-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  min-width: 180px;
+  z-index: 100;
+  padding: 4px 0;
+}
+
+.vync-tab-dropdown__item {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  &:hover { background: #f0f0f0; }
+}
+
+.vync-tab-dropdown__empty {
+  padding: 8px 12px;
+  color: #999;
+  font-size: 12px;
+}
