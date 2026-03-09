@@ -128,13 +128,17 @@ export function FileBoard({ filePath }: FileBoardProps) {
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data) as WsMessage<PlaitElement>;
-          if (msg.type === 'file-changed' && msg.data) {
+          if (
+            msg.type === 'file-changed' &&
+            msg.data &&
+            'elements' in msg.data
+          ) {
             // Suppress echo for 500ms: setValue may trigger multiple onChange calls
             // (children + fitViewport), so a boolean flag is insufficient
             remoteUpdateUntilRef.current = Date.now() + 500;
             setValue((prev) => ({
               ...prev,
-              children: msg.data!.elements || [],
+              children: (msg.data as VyncFile<PlaitElement>).elements || [],
               // viewport NOT updated — keep current tab's viewport independent
             }));
           }

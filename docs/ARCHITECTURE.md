@@ -95,9 +95,16 @@
 
 ### 2.5 WebSocket 프로토콜 (→ D-014)
 
-- **연결**: `ws://localhost:3100/ws?file=<absolutePath>` — `?file=` 필수
-- **메시지 타입**: `connected`, `file-changed`, `file-closed`, `file-deleted`, `error`
-- **파일 스코프 격리**: A.vync의 변경 알림은 A.vync WS 클라이언트에만 전송
+**파일 스코프 WS** (`ws://localhost:3100/ws?file=<absolutePath>`):
+- 특정 파일의 변경 알림 수신
+- 메시지 타입: `connected`, `file-changed`, `file-closed`, `file-deleted`, `error`
+- 파일 스코프 격리: A.vync의 변경 알림은 A.vync WS 클라이언트에만 전송
+
+**Hub WS** (`ws://localhost:3100/ws` — `?file=` 없음):
+- 파일 등록/해제 이벤트 수신 (멀티 탭 UI용)
+- 연결 시: `{ type: 'connected', data: { files: [...] } }` — 현재 등록 파일 목록
+- 파일 등록: `{ type: 'hub-file-registered', filePath: '...' }`
+- 파일 해제: `{ type: 'hub-file-unregistered', filePath: '...' }`
 
 ---
 

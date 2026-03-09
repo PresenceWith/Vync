@@ -100,13 +100,14 @@ async function openFile(filePath: string): Promise<void> {
     }
   }
 
-  // URL now includes ?file= param
-  const fileUrl = `${serverHandle!.url}/?file=${encodeURIComponent(resolved)}`;
+  // First file: create window. Subsequent files: hub WS notifies frontend.
   if (!mainWindow) {
+    const fileUrl = `${serverHandle!.url}/?file=${encodeURIComponent(
+      resolved
+    )}`;
     createWindow(fileUrl);
-  } else {
-    mainWindow.loadURL(fileUrl);
   }
+  // If window already exists, hub WS broadcasts hub-file-registered to frontend
 }
 
 function createWindow(url: string): void {
