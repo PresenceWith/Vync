@@ -276,7 +276,7 @@ Electron main process
 메인 세션 (prose) ↔ vync-translator sub-agent ↔ .vync JSON ↔ 브라우저
 ```
 
-- **커스텀 에이전트**: `.claude-plugin/agents/vync-translator.md` (model: sonnet, skills: vync-editing)
+- **커스텀 에이전트**: `agents/vync-translator.md` (model: sonnet, skills: vync-editing)
 - **커맨드 통합**: `/vync` 하나의 진입점 (init/open/stop: CLI, create/read/update: sub-agent)
 - **Prose 프로토콜**: 메인→Sub: 구조화된 트리 prose, Sub→메인: 한 줄 요약
 - **Context 절감**: 2,000~5,000 → ~630 토큰 (3~8x)

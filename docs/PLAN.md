@@ -162,7 +162,7 @@
 **설계**: `docs/plans/2026-03-09-subagent-translator-design.md`
 
 - [x] 7.1 Spike 검증 — 커스텀 에이전트 인식, Skill 자동 로드, Prose 반환 검증 (GO 판정)
-- [x] 7.2 에이전트 파일 생성 — `.claude-plugin/agents/vync-translator.md`
+- [x] 7.2 에이전트 파일 생성 — `agents/vync-translator.md`
 - [x] 7.3 커맨드 통합 — `/vync` 하나의 진입점으로 create/read/update 통합
 - [x] 7.4 deprecated 제거 — `/vync-create` 삭제
 - [x] 7.5 Install script 업데이트 — 에이전트 심볼릭 링크 + deprecated 정리
