@@ -1,7 +1,7 @@
 {
   "name": "vync",
   "description": "Visual planning tool with real-time file sync. Create and edit mindmaps, flowcharts, and diagrams from Claude Code.",
-  "version": "0.1.0",
+  "version": "0.1.1-test",
   "author": {
     "name": "PresenceWith",
     "url": "https://github.com/PresenceWith"
