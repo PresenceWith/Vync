@@ -1,5 +1,6 @@
 import { vyncInit } from './init.js';
 import { vyncOpen, vyncStop, vyncClose } from './open.js';
+import { vyncDiff, formatDiffResult } from './diff.js';
 
 const USAGE = `Usage: vync <command> [options]
 
@@ -10,12 +11,15 @@ Commands:
   close [file]   Unregister file (or all files if no file given)
                  --keep-server  Keep server running even if no files left
   stop           Stop the running server
+  diff <file>    Show changes since last sync
+                 --no-snapshot  Don't update snapshot after diff
 
 Examples:
   vync init plan        # creates .vync/plan.vync
   vync open plan        # opens .vync/plan.vync
   vync close plan       # unregisters plan.vync (stops server if last file)
   vync close            # unregisters all files and stops server
+  vync diff plan        # shows changes since last read
   vync stop`;
 
 async function main() {
@@ -51,6 +55,17 @@ async function main() {
       const keepServer = args.includes('--keep-server');
       const filePath = args.find((a) => !a.startsWith('--'));
       await vyncClose(filePath, { keepServer });
+      break;
+    }
+    case 'diff': {
+      const noSnapshot = args.includes('--no-snapshot');
+      const filePath = args.find((a) => !a.startsWith('--'));
+      if (!filePath) {
+        console.error('Usage: vync diff <file> [--no-snapshot]');
+        process.exit(1);
+      }
+      const result = await vyncDiff(filePath, { noSnapshot });
+      console.log(formatDiffResult(result));
       break;
     }
     case 'stop': {
