@@ -94,9 +94,54 @@ async function openFile(filePath: string): Promise<void> {
         staticDir,
       });
     } catch (err: any) {
-      dialog.showErrorBox('Vync Error', err.message);
-      app.quit();
-      return;
+      // EADDRINUSE: try connecting to existing server
+      if (err.message.includes('already in use')) {
+        const existingUrl = 'http://localhost:3100';
+        try {
+          const res = await fetch(`${existingUrl}/api/health`, {
+            signal: AbortSignal.timeout(2000),
+          });
+          if (res.ok) {
+            const body = await res.json();
+            if (body.version === 2) {
+              // Reuse existing server (no shutdown responsibility)
+              serverHandle = { shutdown: async () => {}, url: existingUrl };
+              console.log(`[vync] Reusing existing server (PID ${body.pid})`);
+              // Register the file with existing server
+              await fetch(`${existingUrl}/api/files`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filePath: resolved }),
+              });
+            } else {
+              dialog.showErrorBox(
+                'Vync Error',
+                'Incompatible server on port 3100'
+              );
+              app.quit();
+              return;
+            }
+          } else {
+            dialog.showErrorBox(
+              'Vync Error',
+              'Port 3100 in use by non-Vync process'
+            );
+            app.quit();
+            return;
+          }
+        } catch {
+          dialog.showErrorBox(
+            'Vync Error',
+            'Port 3100 in use but server not responding'
+          );
+          app.quit();
+          return;
+        }
+      } else {
+        dialog.showErrorBox('Vync Error', err.message);
+        app.quit();
+        return;
+      }
     }
   }
 
