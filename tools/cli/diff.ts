@@ -24,6 +24,7 @@ export interface DiffResult {
   tree: string;
   changes: DiffChange[];
   hasChanges: boolean;
+  snapshotUpdated: boolean;
 }
 
 // --- Layout fields to ignore ---
@@ -75,9 +76,7 @@ function flattenElements(
     const text = extractText(el);
     const type = (el.type as string) || 'unknown';
     const children = (el.children as Record<string, unknown>[]) || [];
-    const childIds = children
-      .map((c) => c.id as string)
-      .filter(Boolean);
+    const childIds = children.map((c) => c.id as string).filter(Boolean);
 
     map.set(id, { id, text, parentId, type, childIds });
 
@@ -113,9 +112,7 @@ function buildTreeString(
     if (children.length > 0) {
       const childIndent =
         indent === '' ? '  ' : indent + (last ? '    ' : '│   ');
-      lines.push(
-        buildTreeString(children, childIndent, [...isLast, last])
-      );
+      lines.push(buildTreeString(children, childIndent, [...isLast, last]));
     }
   }
 
@@ -256,6 +253,7 @@ export async function vyncDiff(
     tree,
     changes,
     hasChanges: changes.length > 0,
+    snapshotUpdated: !options.noSnapshot,
   };
 }
 
@@ -284,8 +282,10 @@ export function formatDiffResult(result: DiffResult): string {
     lines.push('변경사항: 없음');
   }
 
-  lines.push('');
-  lines.push('Snapshot updated.');
+  if (result.snapshotUpdated) {
+    lines.push('');
+    lines.push('Snapshot updated.');
+  }
 
   return lines.join('\n');
 }

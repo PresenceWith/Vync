@@ -23,6 +23,8 @@
 | D-012 | [데스크톱 앱: Electron Thin Shell](#d-012) | 확정 | 2026-03-08 |
 | D-013 | [AI 편집 위임: Sub-agent 번역 레이어](#d-013) | 확정 | 2026-03-09 |
 | D-014 | [멀티 파일: Hub Server](#d-014) | 확정 | 2026-03-09 |
+| D-015 | [Diff 파이프라인: Hybrid Architecture](#d-015) | 확정 | 2026-03-11 |
+| D-016 | [Sub-agent 역할 확장: 시각화 전문가](#d-016) | 확정 | 2026-03-11 |
 
 ---
 
@@ -287,7 +289,7 @@ Electron main process
 | general-purpose sub-agent + 반복 프롬프트 | Skill 자동 로드 불가, 매번 프롬프트 전달 비용 |
 | MCP 서버 (구조화 API) | MVP 범위 초과, 별도 프로세스 관리 필요 (→ D-010) |
 
-**설계 문서**: `docs/plans/2026-03-09-subagent-translator-design.md`
+**설계 문서**: `docs/archive/2026-03-09-subagent-translator-design.md`
 
 **재검토 조건**: Claude Code의 에이전트 시스템이 변경되어 커스텀 에이전트 방식이 더 이상 유효하지 않을 때
 
@@ -324,7 +326,55 @@ vync open B.vync  ─→  POST /api/files  ─→       ↓
 - **M-8**: 보안 — validateFilePath(allowlist + `.vync` 확장자 + realpath) + Host 헤더 검증
 
 **구현**: 2단계 — 1단계: 허브 서버 + 멀티 윈도우, 2단계: 멀티 탭 UI
-**설계 문서**: `docs/plans/2026-03-09-multi-file-hub-design.md`
-**구현 계획**: `docs/plans/2026-03-09-multi-file-hub-implementation.md`
+**설계 문서**: `docs/archive/2026-03-09-multi-file-hub-design.md`
+**구현 계획**: `docs/archive/2026-03-09-multi-file-hub-implementation.md`
 
 **재검토 조건**: 단일 서버에서 동시 파일 수가 50개 이상으로 증가하여 성능 병목 발생 시
+
+---
+
+### D-015
+
+**Diff 파이프라인: Hybrid Architecture (코드 diff + LLM 번역 + 메인 세션 해석)**
+
+프로그래밍적 diff(코드)로 정밀한 구조 변경을 감지하고, Sub-agent(LLM)가 의미적 번역을 수행하며, 메인 세션이 대화 맥락과 결합하여 인사이트를 도출하는 3단계 파이프라인.
+
+```
+Stage 1: vync diff (코드) — .lastread vs .vync 프로그래밍적 비교
+Stage 2: Sub-agent (LLM) — 맥락 + diff → 의미적 번역 + 시각화 판단/실행
+Stage 3: 메인 세션 — Sub-agent prose + 대화 맥락 → 인사이트
+```
+
+| 대안 | 기각 사유 |
+|------|----------|
+| 전부 LLM (현재) | diff 비결정적, 복잡한 변경에서 누락 가능, 정밀도 부족 |
+| 전부 코드 + 메인 세션 직접 해석 | 메인 세션이 구조 해석 부담, context window 오염 |
+
+**근거**: 각 단계가 가장 잘하는 것을 담당. 코드=정밀 계산, LLM=의미 번역, 메인=맥락 해석.
+**PoC 검증**: H1(diff 의미 번역) PASS, H2(맥락 효과) PASS (2026-03-11)
+**설계 문서**: `docs/plans/2026-03-11-diff-pipeline-redesign.md`
+
+**재검토 조건**: Sub-agent 번역 품질이 실사용에서 불충분할 경우
+
+---
+
+### D-016
+
+**Sub-agent 역할 확장: 시각화 전문가 (맥락 인지형)**
+
+vync-translator sub-agent를 "기계적 JSON 변환기"에서 "시각화 전문가"로 역할 확장. 대화 맥락과 유저 피드백(diff)을 이해하고, 시각화 전략을 자율적으로 판단하여 .vync 파일을 작성/수정한다.
+
+Sub-agent의 2가지 역할:
+1. **시각화 전략 결정**: 맥락 + diff를 보고 "어떤 부분을 어떻게 시각화할지" 판단
+2. **시각화 실행**: 판단에 따라 .vync 파일 작성/수정
+
+| 대안 | 기각 사유 |
+|------|----------|
+| 기계적 변환기 유지 (현재) | 메인 세션이 모든 시각화 판단 + prose 트리 정리를 해야 함, 메인 세션 부담 큼 |
+
+**입력**: 대화 맥락 + 프로그래밍적 diff + 지시
+**근거**: 메인 세션은 대화에 집중, Sub-agent는 시각화에 집중. 역할 분리 명확화.
+**PoC 검증**: H3(자율 시각화 판단) PASS — mindmap 자율 선택, 16노드/3단계, validate 통과 (2026-03-11)
+**설계 문서**: `docs/plans/2026-03-11-diff-pipeline-redesign.md`
+
+**재검토 조건**: 자율 판단 품질이 실사용에서 불충분할 경우
