@@ -3,7 +3,11 @@ import path from 'node:path';
 import express from 'express';
 import { createWsServer } from './ws-handler.js';
 import { FileRegistry } from './file-registry.js';
-import { addAllowedDir, createHostGuard, validateFilePath } from './security.js';
+import {
+  addAllowedDir,
+  createHostGuard,
+  validateFilePath,
+} from './security.js';
 import type { VyncFile } from '@vync/shared';
 
 const DEFAULT_PORT = 3100;
@@ -55,7 +59,12 @@ export async function startServer(
 
   // --- Health endpoint ---
   app.get('/api/health', (_req, res) => {
-    res.json({ version: 2, mode: 'hub', fileCount: registry.listFiles().length });
+    res.json({
+      version: 2,
+      mode: 'hub',
+      pid: process.pid,
+      fileCount: registry.listFiles().length,
+    });
   });
 
   // --- File registration API ---
@@ -79,7 +88,10 @@ export async function startServer(
         status: alreadyRegistered ? 'already_registered' : 'registered',
       });
     } catch (err: any) {
-      if (err.message.includes('outside allowed') || err.message.includes('Only .vync')) {
+      if (
+        err.message.includes('outside allowed') ||
+        err.message.includes('Only .vync')
+      ) {
         res.status(403).json({ error: err.message });
       } else if (err.message.includes('Maximum')) {
         res.status(429).json({ error: err.message });
@@ -116,7 +128,9 @@ export async function startServer(
   app.get('/api/sync', async (req, res) => {
     const filePath = req.query.file as string;
     if (!filePath) {
-      res.status(400).json({ error: 'file_required', files: registry.listFiles() });
+      res
+        .status(400)
+        .json({ error: 'file_required', files: registry.listFiles() });
       return;
     }
     const sync = registry.getSync(filePath);
@@ -194,7 +208,10 @@ export async function startServer(
     if (vite) await vite.close();
     await new Promise<void>((resolve) => {
       const timer = setTimeout(resolve, 3000);
-      server.close(() => { clearTimeout(timer); resolve(); });
+      server.close(() => {
+        clearTimeout(timer);
+        resolve();
+      });
     });
   };
 
@@ -221,7 +238,9 @@ export async function startServer(
 
   if (options.openBrowser && options.initialFile) {
     const openModule = await import('open');
-    await openModule.default(`${url}/?file=${encodeURIComponent(options.initialFile)}`);
+    await openModule.default(
+      `${url}/?file=${encodeURIComponent(options.initialFile)}`
+    );
   }
 
   return { shutdown, server, url, registry };
@@ -239,8 +258,14 @@ if (isDirectRun) {
 
   startServer({ initialFile: resolvedFile })
     .then(({ shutdown }) => {
-      process.on('SIGINT', async () => { await shutdown(); process.exit(0); });
-      process.on('SIGTERM', async () => { await shutdown(); process.exit(0); });
+      process.on('SIGINT', async () => {
+        await shutdown();
+        process.exit(0);
+      });
+      process.on('SIGTERM', async () => {
+        await shutdown();
+        process.exit(0);
+      });
     })
     .catch((err) => {
       console.error('[vync] Fatal error:', err.message);
