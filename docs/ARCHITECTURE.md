@@ -334,13 +334,15 @@ Vync/                              # nx monorepo (Drawnix 포크 기반)
 │   │   ├── sync-service.ts        # 동기화 로직 (에코 방지 + 원자적 쓰기 + drain())
 │   │   └── ws-handler.ts          # WebSocket 메시지 핸들러 (파일 스코프 라우팅, ?file=)
 │   └── cli/
-│       ├── main.ts                # CLI 진입점 (init/open/close/stop 라우팅)              [VYNC 수정: Phase 8]
+│       ├── main.ts                # CLI 진입점 (init/open/close/stop/diff 라우팅)          [VYNC 수정: Phase 8, diff 추가]
 │       ├── init.ts                # vync init: 빈 .vync 파일 생성
 │       ├── open.ts                # vync open/close/stop: 허브 모드 + PID JSON 포맷       [VYNC 수정: Phase 8]
+│       ├── diff.ts                # vync diff: 프로그래밍적 diff (.lastread vs .vync)      [VYNC 추가: D-015]
 │       ├── resolve.ts             # resolveVyncPath(): 경로 해석 (bare name → .vync/ 하위)
 │       └── __tests__/
 │           ├── init.test.ts       # init 유닛 테스트
-│           └── open.test.ts       # smart restart + vyncStop 유닛 테스트
+│           ├── open.test.ts       # smart restart + vyncStop 유닛 테스트
+│           └── diff.test.ts       # diff 엔진 유닛 테스트 (15개)                          [VYNC 추가: D-015]
 ├── bin/
 │   └── vync.js                    # CLI 진입점 (CommonJS, tsx spawn) [VYNC 추가]
 ├── .claude-plugin/                # Claude Code 플러그인 메타 (marketplace 표준) [VYNC 추가]

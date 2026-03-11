@@ -85,8 +85,8 @@
 
 **목표**: CLI로 파일 관리, Claude Code 플러그인으로 .vync 편집의 전체 라이프사이클 관리.
 **의존**: Phase 3 완료
-**설계**: `docs/plans/2026-03-07-phase4-claude-plugin-design.md`
-**구현**: `docs/plans/2026-03-07-phase4-implementation.md`
+**설계**: `docs/archive/2026-03-07-phase4-claude-plugin-design.md`
+**구현**: `docs/archive/2026-03-07-phase4-implementation.md`
 
 - [x] 4.1 `vync init <file>` — 빈 캔버스 .vync 파일 생성 (tools/cli/init.ts + tests)
 - [x] 4.2 `vync open <file>` + `vync stop` — server.ts 리팩토링 (startServer export, VYNC_HOME) + bin/vync.js CLI 진입점 + PID 관리 (~/.vync/server.pid)
@@ -133,8 +133,8 @@
 
 **목표**: Vync를 Electron으로 감싸서 네이티브 데스크톱 앱처럼 동작하게 한다 (.vync 더블클릭 → 앱 열림, 창 닫기 → 자동 종료).
 **의존**: Phase 5 완료
-**설계**: `docs/plans/2026-03-08-electron-desktop-design.md`
-**구현**: `docs/plans/2026-03-08-electron-implementation.md`
+**설계**: `docs/archive/2026-03-08-electron-desktop-design.md`
+**구현**: `docs/archive/2026-03-08-electron-implementation.md`
 
 - [x] 6.1 서버 리팩토링 — process.exit 제거, 시그널 핸들러 분리, 설정 가능 포트, EADDRINUSE 처리 (→ D-012)
 - [x] 6.2 조건부 Vite import + 프로덕션 정적 서빙 (dev: Vite middleware, prod: express.static)
@@ -159,7 +159,7 @@
 
 **목표**: .vync JSON 편집을 전담 sub-agent에 위임하여 메인 세션의 context window를 보호한다.
 **의존**: Phase 4, Phase 6 완료
-**설계**: `docs/plans/2026-03-09-subagent-translator-design.md`
+**설계**: `docs/archive/2026-03-09-subagent-translator-design.md`
 
 - [x] 7.1 Spike 검증 — 커스텀 에이전트 인식, Skill 자동 로드, Prose 반환 검증 (GO 판정)
 - [x] 7.2 에이전트 파일 생성 — `agents/vync-translator.md`
@@ -176,7 +176,7 @@
 ### 7-P1: Diff-Aware Read
 
 **목표**: `/vync read` 시 마지막 읽기 이후 변경사항을 diff로 보고하여 "무엇이 바뀌었는지" 인식 가능하게 한다.
-**설계**: `docs/plans/2026-03-09-diff-aware-read.md`
+**설계**: `docs/archive/2026-03-09-diff-aware-read.md`
 
 - [x] 7-P1.1 `.gitignore`에 `*.lastread` 추가
 - [x] 7-P1.2 vync-translator 에이전트 Read 절차에 스냅샷 비교 로직 추가
@@ -191,8 +191,8 @@
 
 **목표**: 단일 서버(:3100)가 여러 `.vync` 파일을 동시에 관리하는 허브 아키텍처로 전환한다.
 **의존**: Phase 7 완료
-**설계**: `docs/plans/2026-03-09-multi-file-hub-design.md` (→ D-014)
-**구현**: `docs/plans/2026-03-09-multi-file-hub-implementation.md`
+**설계**: `docs/archive/2026-03-09-multi-file-hub-design.md` (→ D-014)
+**구현**: `docs/archive/2026-03-09-multi-file-hub-implementation.md`
 
 - [x] 8.1 공유 타입 확장 — WsMessage에 filePath, file-closed, file-deleted, error 추가
 - [x] 8.2 보안 레이어 — validateFilePath (allowlist + .vync 확장자 + realpath) + hostGuard
@@ -225,7 +225,7 @@
 
 **목표**: 단일 브라우저/Electron 윈도우 안에서 여러 `.vync` 파일을 탭으로 전환하며 작업할 수 있는 UI를 구현한다.
 **의존**: Phase 8 완료
-**설계**: `docs/plans/2026-03-09-multi-tab-ui-design.md`
+**설계**: `docs/archive/2026-03-09-multi-tab-ui-design.md`
 
 - [x] 9.1 WsMessage 타입 확장 — `hub-file-registered`, `hub-file-unregistered` 추가
 - [x] 9.2 FileRegistry hub 클라이언트 관리 — hubClients Set + broadcastToHub
