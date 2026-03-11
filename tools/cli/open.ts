@@ -260,7 +260,24 @@ async function runElectron(resolved: string): Promise<void> {
     try {
       const res = await fetch(`${url}/api/health`);
       if (res.ok) {
-        console.log(`[vync] Vync app running (PID ${childPid})`);
+        const body = await res.json();
+        // Verify this is our server, not a ghost
+        if (body.pid !== childPid) {
+          // Ghost server detected — reuse it instead
+          console.log(
+            `[vync] Existing server found (PID ${body.pid}), reusing.`
+          );
+          await writeServerInfo({
+            version: 2,
+            pid: body.pid,
+            mode: 'daemon',
+            port: PORT,
+          });
+        } else {
+          console.log(`[vync] Vync app running (PID ${childPid})`);
+        }
+        // Register file (same as runDaemon)
+        await registerFile(PORT, resolved);
         console.log(`[vync] Log: ${LOG_FILE}`);
         return;
       }
