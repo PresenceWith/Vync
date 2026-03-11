@@ -117,10 +117,7 @@ describe('computeDiff', () => {
       mindmapEl(
         'root',
         'Project',
-        [
-          childEl('a', 'Design', [childEl('c', 'UX')]),
-          childEl('b', 'Dev'),
-        ],
+        [childEl('a', 'Design', [childEl('c', 'UX')]), childEl('b', 'Dev')],
         { isRoot: true }
       ),
     ];
@@ -129,10 +126,7 @@ describe('computeDiff', () => {
       mindmapEl(
         'root',
         'Project',
-        [
-          childEl('a', 'Design'),
-          childEl('b', 'Dev', [childEl('c', 'UX')]),
-        ],
+        [childEl('a', 'Design'), childEl('b', 'Dev', [childEl('c', 'UX')])],
         { isRoot: true }
       ),
     ];
@@ -147,11 +141,7 @@ describe('computeDiff', () => {
       mindmapEl(
         'root',
         'Project',
-        [
-          childEl('a', 'Design'),
-          childEl('b', 'Dev'),
-          childEl('c', 'Test'),
-        ],
+        [childEl('a', 'Design'), childEl('b', 'Dev'), childEl('c', 'Test')],
         { isRoot: true }
       ),
     ];
@@ -182,7 +172,10 @@ describe('computeDiff', () => {
         type: 'geometry',
         shape: 'rectangle',
         text: { children: [{ text: 'Start' }] },
-        points: [[0, 0], [100, 50]],
+        points: [
+          [0, 0],
+          [100, 50],
+        ],
         children: [],
       },
     ];
@@ -192,7 +185,10 @@ describe('computeDiff', () => {
         type: 'geometry',
         shape: 'rectangle',
         text: { children: [{ text: 'Begin' }] },
-        points: [[0, 0], [100, 50]],
+        points: [
+          [0, 0],
+          [100, 50],
+        ],
         children: [],
       },
     ];
@@ -301,9 +297,9 @@ describe('vyncDiff', () => {
   });
 
   it('throws for non-existent file', async () => {
-    await expect(
-      vyncDiff(path.join(tmpDir, 'nope.vync'))
-    ).rejects.toThrow('File not found');
+    await expect(vyncDiff(path.join(tmpDir, 'nope.vync'))).rejects.toThrow(
+      'File not found'
+    );
   });
 });
 
@@ -323,6 +319,7 @@ describe('formatDiffResult', () => {
         },
       ],
       hasChanges: true,
+      snapshotUpdated: true,
     });
 
     expect(output).toContain('=== Vync Diff: plan.vync ===');
@@ -339,8 +336,21 @@ describe('formatDiffResult', () => {
       tree: '  Project',
       changes: [],
       hasChanges: false,
+      snapshotUpdated: true,
     });
 
     expect(output).toContain('변경사항: 없음');
+  });
+
+  it('omits snapshot message when --no-snapshot', () => {
+    const output = formatDiffResult({
+      filePath: '/path/to/plan.vync',
+      tree: '  Project',
+      changes: [],
+      hasChanges: false,
+      snapshotUpdated: false,
+    });
+
+    expect(output).not.toContain('Snapshot updated.');
   });
 });
