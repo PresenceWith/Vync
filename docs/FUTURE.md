@@ -122,7 +122,7 @@ D-008에서 Last Write Wins로 결정. 후속 개선 옵션:
 
 | 항목 | 설명 |
 |------|------|
-| 배포/패키징 | Electron DMG 패키징 구현 완료 (→ D-012). 추가: 코드 서명/공증, 자동 업데이트, `npx vync`/npm 발행 |
+| 배포/패키징 | Electron DMG 패키징 구현 완료 (→ D-012). 코드 서명/공증 완료 (Developer ID Application + notarytool, 2026-03-11). 추가: 자동 업데이트, `npx vync`/npm 발행 |
 | 다중 파일 | **1단계 완료** (Phase 8, → D-014): Hub Server + 멀티 윈도우. **2단계 완료** (Phase 9): 멀티 탭 UI ([설계](../docs/archive/2026-03-09-multi-tab-ui-design.md)). 후속: 대시보드, 파일 간 링크 |
 | 보안 | 기본 보안 구현 완료 (Phase 8): validateFilePath(allowlist + .vync + realpath) + Host 헤더 검증 + CORS + WS Origin 검증. 추가: 디렉토리 접근 제한 고도화 |
 | `vync watch` | UI 없이 파일 감시 데몬 (자동 변환 파이프라인용) |

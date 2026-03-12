@@ -8,6 +8,11 @@ directories:
 mac:
   category: public.app-category.productivity
   target: dmg
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  notarize: true
 
 dmg:
   title: Vync

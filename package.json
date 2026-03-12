@@ -1,6 +1,8 @@
 {
   "name": "@vync/source",
   "version": "0.0.2",
+  "description": "Local-first visual planning tool with real-time sync",
+  "author": "Gyuhak Kim",
   "license": "MIT",
   "scripts": {
     "start": "nx serve web --host=0.0.0.0",
@@ -11,7 +13,7 @@
     "dev:server": "tsx tools/server/server.ts",
     "dev:desktop": "npx esbuild tools/electron/main.ts --bundle --platform=node --outdir=dist/electron --external:electron --packages=external --alias:@vync/shared=./packages/shared/src/index.ts --sourcemap && electron dist/electron/main.js",
     "build:desktop": "nx build web && npx esbuild tools/electron/main.ts tools/electron/preload.ts --bundle --platform=node --outdir=dist/electron --external:electron --packages=external --alias:@vync/shared=./packages/shared/src/index.ts",
-    "package:desktop": "npm run build:desktop && electron-builder",
+    "package:desktop": "npm run build:desktop && APPLE_KEYCHAIN_PROFILE=vync-notarize APPLE_TEAM_ID=4Y9H392BWW npx electron-builder",
     "postinstall": "bash .claude-plugin/install.sh 2>/dev/null || true"
   },
   "main": "dist/electron/main.js",
