@@ -10,7 +10,6 @@
 .vync-tab-scroll {
   display: flex;
   align-items: stretch;
-  flex: 1;
   min-width: 0;
   overflow-x: auto;
   &::-webkit-scrollbar { height: 0; }
