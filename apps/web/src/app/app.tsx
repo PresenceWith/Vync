@@ -31,6 +31,7 @@ export function App() {
   const [tabs, setTabs] = useState<TabInfo[]>([]);
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
   const [registeredFiles, setRegisteredFiles] = useState<string[]>([]);
+  const [discoveredFiles, setDiscoveredFiles] = useState<string[]>([]);
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
 
@@ -126,15 +127,50 @@ export function App() {
     setActiveFilePath(filePath);
   }, []);
 
+  const handleDropdownOpen = useCallback(async () => {
+    try {
+      const res = await fetch('/api/files/discover');
+      if (res.ok) {
+        const data = await res.json();
+        setDiscoveredFiles(data.files || []);
+      }
+    } catch {
+      setDiscoveredFiles([]);
+    }
+  }, []);
+
+  const handleDiscoverFile = useCallback(
+    async (filePath: string) => {
+      try {
+        const res = await fetch('/api/files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          handleAddFile(data.filePath);
+          setDiscoveredFiles([]);
+        }
+      } catch (err) {
+        console.error('[vync] Failed to register discovered file:', err);
+      }
+    },
+    [handleAddFile]
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <TabBar
         tabs={tabsWithLabels}
         activeFilePath={activeFilePath}
         registeredFiles={registeredFiles}
+        discoveredFiles={discoveredFiles}
         onTabClick={setActiveFilePath}
         onTabClose={handleTabClose}
         onAddFile={handleAddFile}
+        onDiscoverFile={handleDiscoverFile}
+        onDropdownOpen={handleDropdownOpen}
       />
       {activeFilePath ? (
         <div style={{ flex: 1, overflow: 'hidden' }}>

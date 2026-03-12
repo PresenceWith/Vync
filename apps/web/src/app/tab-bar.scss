@@ -76,6 +76,21 @@
   min-width: 180px;
   z-index: 100;
   padding: 4px 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.vync-tab-dropdown__section {
+  padding: 4px 12px;
+  font-size: 11px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  &:not(:first-child) {
+    border-top: 1px solid #eee;
+    margin-top: 2px;
+    padding-top: 6px;
+  }
 }
 
 .vync-tab-dropdown__item {

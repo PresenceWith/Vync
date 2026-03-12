@@ -6,18 +6,24 @@ interface TabBarProps {
   tabs: TabInfo[];
   activeFilePath: string | null;
   registeredFiles: string[];
+  discoveredFiles: string[];
   onTabClick: (filePath: string) => void;
   onTabClose: (filePath: string) => void;
   onAddFile: (filePath: string) => void;
+  onDiscoverFile: (filePath: string) => void;
+  onDropdownOpen: () => void;
 }
 
 export function TabBar({
   tabs,
   activeFilePath,
   registeredFiles,
+  discoveredFiles,
   onTabClick,
   onTabClose,
   onAddFile,
+  onDiscoverFile,
+  onDropdownOpen,
 }: TabBarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -67,32 +73,66 @@ export function TabBar({
         ))}
       </div>
       <div className="vync-tab-add" ref={dropdownRef}>
-        <span onClick={() => setDropdownOpen(!dropdownOpen)}>+</span>
+        <span
+          onClick={() => {
+            const willOpen = !dropdownOpen;
+            setDropdownOpen(willOpen);
+            if (willOpen) onDropdownOpen();
+          }}
+        >
+          +
+        </span>
         {dropdownOpen && (
           <div className="vync-tab-dropdown">
-            {unopenedFiles.length > 0 ? (
-              unopenedFiles.map((fp) => {
-                const parts = fp.split('/');
-                const label = parts[parts.length - 1] || fp;
-                return (
-                  <div
-                    key={fp}
-                    className="vync-tab-dropdown__item"
-                    title={fp}
-                    onClick={() => {
-                      onAddFile(fp);
-                      setDropdownOpen(false);
-                    }}
-                  >
-                    {label}
-                  </div>
-                );
-              })
-            ) : (
+            {unopenedFiles.length > 0 && (
+              <>
+                <div className="vync-tab-dropdown__section">Reopen</div>
+                {unopenedFiles.map((fp) => {
+                  const parts = fp.split('/');
+                  const label = parts[parts.length - 1] || fp;
+                  return (
+                    <div
+                      key={fp}
+                      className="vync-tab-dropdown__item"
+                      title={fp}
+                      onClick={() => {
+                        onAddFile(fp);
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      {label}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            {discoveredFiles.length > 0 && (
+              <>
+                <div className="vync-tab-dropdown__section">Open</div>
+                {discoveredFiles.map((fp) => {
+                  const parts = fp.split('/');
+                  const label = parts[parts.length - 1] || fp;
+                  return (
+                    <div
+                      key={fp}
+                      className="vync-tab-dropdown__item"
+                      title={fp}
+                      onClick={() => {
+                        onDiscoverFile(fp);
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      {label}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            {unopenedFiles.length === 0 && discoveredFiles.length === 0 && (
               <div className="vync-tab-dropdown__empty">
-                No more files.
+                No files found.
                 <br />
-                Use <code>vync open</code> to register new files.
+                Use <code>vync open &lt;file&gt;</code> to add files.
               </div>
             )}
           </div>
