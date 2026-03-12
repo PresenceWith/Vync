@@ -1,11 +1,13 @@
 import http from 'node:http';
 import path from 'node:path';
+import fs from 'node:fs/promises';
 import express from 'express';
 import { createWsServer } from './ws-handler.js';
 import { FileRegistry } from './file-registry.js';
 import {
   addAllowedDir,
   createHostGuard,
+  getAllowedDirs,
   validateFilePath,
 } from './security.js';
 import type { VyncFile } from '@vync/shared';
@@ -124,6 +126,42 @@ export async function startServer(
     }
   });
 
+  // --- File discovery API ---
+  app.get('/api/files/discover', async (_req, res) => {
+    try {
+      const registered = new Set(registry.listFiles());
+      const scanDirs = new Set<string>();
+      for (const dir of getAllowedDirs()) {
+        scanDirs.add(dir);
+        scanDirs.add(path.join(dir, '.vync'));
+      }
+      const discovered: string[] = [];
+      const MAX_RESULTS = 100;
+      for (const dir of scanDirs) {
+        if (discovered.length >= MAX_RESULTS) break;
+        try {
+          const entries = await fs.readdir(dir, { withFileTypes: true });
+          for (const entry of entries) {
+            if (discovered.length >= MAX_RESULTS) break;
+            if (!entry.isFile() || !entry.name.endsWith('.vync')) continue;
+            const real = await fs
+              .realpath(path.join(dir, entry.name))
+              .catch(() => null);
+            if (real && !registered.has(real)) {
+              discovered.push(real);
+            }
+          }
+        } catch {
+          /* directory doesn't exist or not readable */
+        }
+      }
+      res.json({ files: [...new Set(discovered)] });
+    } catch (err: any) {
+      console.error('[vync] Discovery error:', err);
+      res.status(500).json({ error: 'Discovery failed' });
+    }
+  });
+
   // --- Sync API (file-scoped) ---
   app.get('/api/sync', async (req, res) => {
     const filePath = req.query.file as string;
@@ -180,7 +218,7 @@ export async function startServer(
 
   if (mode === 'production' && options.staticDir) {
     app.use(express.static(options.staticDir));
-    app.get('*', (_req, res) => {
+    app.get('*path', (_req, res) => {
       res.sendFile(path.join(options.staticDir!, 'index.html'));
     });
   } else if (mode === 'development') {

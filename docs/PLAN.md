@@ -7,7 +7,12 @@
 
 ## 현재 상태
 
-**Phase**: 9 구현 완료 (멀티 탭 UI) — 2026-03-09
+**Phase**: Post-MVP 안정화 — 2026-03-12
+- Phase 1~9 (MVP): 완료 (2026-03-07 ~ 2026-03-09)
+- Diff Pipeline (D-015/D-016): 완료 (2026-03-11)
+- Server Lifecycle Fix (PR #10): 완료 (2026-03-11)
+- macOS 코드 서명 + 공증: 완료 (2026-03-11)
+- Tab Bar "+" 버튼 수정 (PR #11): 구현 완료, PR 대기 (2026-03-12)
 
 ---
 
@@ -247,6 +252,99 @@
 - [x] Electron에서 동일한 탭 UI 동작 (thin shell 아키텍처, 프론트엔드 공유)
 
 **핵심 설계 결정 (M-9~M-15)**: 상단 수평 탭 바(M-9), Active 탭만 마운트(M-10), Hub-level WebSocket(M-11), 탭 닫기 ≠ vync close(M-12), Electron = 웹 동일(M-13), CLI에서만 파일 열기(M-14), 중복 파일명 disambiguate(M-15)
+
+---
+
+## Diff Pipeline (D-015/D-016)
+
+**목표**: 프로그래밍적 diff 엔진으로 .vync 파일 변경을 정밀하게 감지하고, Sub-agent를 시각화 전문가로 역할 확장한다.
+**의존**: Phase 7 (Sub-agent), Phase 9 (멀티 탭 UI) 완료
+**설계**: `docs/archive/2026-03-11-diff-pipeline-redesign.md`
+**PoC**: `docs/archive/2026-03-11-diff-pipeline-poc.md` + `docs/archive/2026-03-11-diff-pipeline-poc-results.md`
+
+- [x] DP.1 Diff 엔진 (`tools/cli/diff.ts`) — ID 기반 구조적 diff (.lastread vs .vync), 트리 출력, 레이아웃 필드 무시
+- [x] DP.2 CLI `vync diff` 서브커맨드 — `--no-snapshot` 옵션, .lastread 스냅샷 관리
+- [x] DP.3 Diff 유닛 테스트 — 16개 테스트 PASS (diff.test.ts)
+- [x] DP.4 Sub-agent 역할 재설계 — vync-translator를 "시각화 전문가"로 확장 (D-016)
+- [x] DP.5 커맨드 흐름 재설계 — `/vync read`에 맥락+diff 입력, `/vync update`에 맥락 기반 지시
+- [x] DP.6 PoC 검증 — H1(diff 의미 번역) PASS, H2(맥락 효과) PASS, H3(자율 시각화 판단) PASS
+- [x] DP.7 E2E 검증 — 6/6 PASS (create→브라우저수정→diff→read→update→diff 전체 사이클)
+- [x] DP.8 플러그인 캐시 동기화 완료
+
+**완료 기준**:
+- [x] `vync diff <file>` 이 .lastread 대비 구조적 변경 보고
+- [x] Sub-agent가 맥락+diff를 이해하고 자율적 시각화 전략 판단
+- [x] 67개 전체 테스트 PASS (diff 16개 포함)
+
+**PR**: #9 (feat/diff-pipeline → develop → main)
+
+---
+
+## Server Lifecycle Fix (PR #10)
+
+**목표**: Electron EADDRINUSE recovery + CLI/Server identity 검증으로 포트 충돌 시 자동 복구.
+**설계**: `docs/archive/2026-03-10-server-lifecycle-fix.md`
+
+- [x] SL.1 Health endpoint에 `pid` 추가 — 서버 identity 검증 기반
+- [x] SL.2 Electron EADDRINUSE recovery — 기존 서버 감지 시 재사용 (shutdown: no-op)
+- [x] SL.3 CLI `isServerRunning` 포트 프로브 — PID 파일 없어도 포트에서 Vync 서버 발견 + PID 파일 복구
+- [x] SL.4 `runElectron`에 `registerFile` 추가 — `runDaemon`과의 비대칭 해소 + ghost server identity 검증
+- [x] SL.5 통합 E2E 검증 — 정상 시작, ghost 서버 recovery, Electron EADDRINUSE recovery 시나리오
+
+**완료 기준**:
+- [x] PID 파일 없어도 포트 프로브로 기존 서버 발견 + 재사용
+- [x] Electron EADDRINUSE 시 기존 서버에 연결 (서버 종료 안 함)
+- [x] runElectron/runDaemon 대칭성 확보 (registerFile 호출)
+- [x] 전체 테스트 PASS
+
+**PR**: #10 (fix/server-lifecycle → develop → main)
+
+---
+
+## macOS 코드 서명 + 공증
+
+**목표**: macOS Gatekeeper를 통과하는 서명된 DMG를 빌드한다.
+
+- [x] CS.1 Developer ID Application 인증서 설정 (4Y9H392BWW)
+- [x] CS.2 notarytool Keychain profile 생성 (`vync-notarize`)
+- [x] CS.3 electron-builder.yml에 notarize 설정 추가
+- [x] CS.4 package.json에 환경변수 (APPLE_KEYCHAIN_PROFILE, APPLE_TEAM_ID) 설정
+- [x] CS.5 `npm run package:desktop` → 서명 + 공증 자동화 검증
+- [x] CS.6 Gatekeeper 통과 확인 (`source=Notarized Developer ID`)
+
+**완료 기준**:
+- [x] `dist/packages/Vync-0.0.2-arm64.dmg` (121MB) 빌드 성공
+- [x] macOS Gatekeeper accepted, `source=Notarized Developer ID`
+
+**커밋**: `588fd97` (chore(desktop): add macOS code signing and notarization config)
+
+---
+
+## Fix: Tab Bar "+" 버튼 (구현 완료, PR 대기)
+
+**목표**: "+" 버튼이 정상 동작하여 사용자가 디스크의 미등록 .vync 파일을 브라우저에서 직접 열 수 있게 한다.
+**브랜치**: `fix/tab-add-button`
+**계획**: `docs/plans/2026-03-12-fix-tab-add-button.md`
+
+### Bug 1: CSS overflow 클리핑
+- [x] TB.1 SCSS — `.vync-tab-scroll` 분리 (overflow-x: auto를 탭 스크롤 영역으로 이동)
+- [x] TB.2 TSX — 탭 바 DOM에 scroll wrapper 추가
+- [x] TB.3 브라우저에서 드롭다운 표시 확인
+
+### Bug 2: 파일 목록 항상 비어있음
+- [x] TB.4 서버 `GET /api/files/discover` 엔드포인트 테스트 작성 (5개)
+- [x] TB.5 서버 `GET /api/files/discover` 엔드포인트 구현
+- [x] TB.6 TabBar props 확장 + App discovery state/handlers 추가
+- [x] TB.7 드롭다운 두 섹션 (Reopen/Open) 렌더링
+- [x] TB.8 섹션 헤더 스타일 + 드롭다운 max-height
+
+### 검증
+- [x] TB.9 TypeScript 컴파일 확인
+- [x] TB.10 전체 테스트 PASS (72개)
+- [ ] TB.11 E2E 수동 검증 (6개 시나리오)
+
+### 남은 작업
+- E2E 수동 검증 후 PR 생성 (fix/tab-add-button → develop)
 
 ---
 

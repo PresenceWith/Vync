@@ -123,8 +123,38 @@ D-008에서 Last Write Wins로 결정. 후속 개선 옵션:
 | 항목 | 설명 |
 |------|------|
 | 배포/패키징 | Electron DMG 패키징 구현 완료 (→ D-012). 코드 서명/공증 완료 (Developer ID Application + notarytool, 2026-03-11). 추가: 자동 업데이트, `npx vync`/npm 발행 |
-| 다중 파일 | **1단계 완료** (Phase 8, → D-014): Hub Server + 멀티 윈도우. **2단계 완료** (Phase 9): 멀티 탭 UI ([설계](../docs/archive/2026-03-09-multi-tab-ui-design.md)). 후속: 대시보드, 파일 간 링크 |
+| 다중 파일 | **1단계 완료** (Phase 8, → D-014): Hub Server + 멀티 윈도우. **2단계 완료** (Phase 9): 멀티 탭 UI ([설계](./archive/2026-03-09-multi-tab-ui-design.md)). 후속: 대시보드, 파일 간 링크 |
 | 보안 | 기본 보안 구현 완료 (Phase 8): validateFilePath(allowlist + .vync + realpath) + Host 헤더 검증 + CORS + WS Origin 검증. 추가: 디렉토리 접근 제한 고도화 |
 | `vync watch` | UI 없이 파일 감시 데몬 (자동 변환 파이프라인용) |
 | 업스트림 (Drawnix) 추적 | 주기적 upstream diff, 핵심 변경 최소화 |
 | 역변환 | PlaitElement[] → Markdown/Mermaid (기술적 난이도 높음) |
+
+---
+
+## 6. .vync Document Package 전환 (미결정)
+
+> **결정 필요** — [계획 문서](./plans/2026-03-12-vync-document-package.md)
+
+`.vync` 확장자를 단일 JSON 파일에서 macOS Document Package(디렉토리 번들)로 전환. Finder에서 `project.vync` 더블클릭 → Electron이 내부 캔버스 목록 표시. **Breaking change**: 기존 단일 파일 워크플로우 전체 변경, 마이그레이션 필수. 결정 사항과 영향 범위는 계획 문서 참조.
+
+---
+
+## 7. .vync 파일 연결 UX (2026-03-12 기획)
+
+### 배경
+DMG 설치 시 `electron-builder.yml`의 `fileAssociations` + `UTExportedTypeDeclarations`로 .vync 파일 연결이 자동 등록됨.
+개발 모드(`git clone + npm install`)에서는 CLI가 주 진입점이며, OS 파일 연결은 불필요.
+
+### P2: 앱 첫 실행 안내 다이얼로그
+- 패키징 앱 첫 실행 시 "Finder에서 .vync 파일 > 우클릭 > 이 앱으로 열기 > 항상" 안내
+- Electron 메뉴 Help > "How to set as default app" 도움말 항목 추가
+- 참고: `app.setAsDefaultProtocolClient()`은 프로토콜 전용이므로 파일 확장자 기본 앱 등록은 네이티브 API 필요 → 안내 다이얼로그가 현실적
+
+### P3: .vync 전용 파일 아이콘
+- `.icns` (macOS) / `.ico` (Windows) 커스텀 아이콘 디자인
+- `electron-builder.yml`의 `fileAssociations.icon` 필드에 등록
+- Finder/탐색기에서 .vync 파일의 시각적 구분
+
+### 완료된 P1
+- `vync open .` / `vync open` (인자 없이) — 디렉토리 내 .vync 파일 자동 발견
+- UTI 등록 (`com.vync.canvas`) — `electron-builder.yml`의 `mac.extendInfo.UTExportedTypeDeclarations`

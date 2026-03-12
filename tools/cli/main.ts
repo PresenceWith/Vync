@@ -1,12 +1,14 @@
 import { vyncInit } from './init.js';
 import { vyncOpen, vyncStop, vyncClose } from './open.js';
 import { vyncDiff, formatDiffResult } from './diff.js';
+import { discoverVyncFiles } from './discover.js';
 
 const USAGE = `Usage: vync <command> [options]
 
 Commands:
   init <file>    Create .vync canvas in CWD/.vync/
-  open <file>    Start server and open browser
+  open [file|.]  Start server and open browser
+                 No args or "." discovers .vync files in CWD
                  --foreground  Run in foreground (blocking)
   close [file]   Unregister file (or all files if no file given)
                  --keep-server  Keep server running even if no files left
@@ -17,6 +19,8 @@ Commands:
 Examples:
   vync init plan        # creates .vync/plan.vync
   vync open plan        # opens .vync/plan.vync
+  vync open             # discovers .vync files in CWD
+  vync open .           # same as above
   vync close plan       # unregisters plan.vync (stops server if last file)
   vync close            # unregisters all files and stops server
   vync diff plan        # shows changes since last read
@@ -44,11 +48,50 @@ async function main() {
     case 'open': {
       const foreground = args.includes('--foreground');
       const filePath = args.find((a) => !a.startsWith('--'));
-      if (!filePath) {
-        console.error('Usage: vync open <file> [--foreground]');
-        process.exit(1);
+      if (!filePath || filePath === '.') {
+        // Discover .vync files in CWD
+        const discovered = await discoverVyncFiles();
+        if (discovered.length === 0) {
+          console.error('[vync] No .vync files found in current directory.');
+          console.error('[vync] Run "vync init <name>" to create one.');
+          process.exit(1);
+        }
+        let chosen: string;
+        if (discovered.length === 1) {
+          chosen = discovered[0];
+          console.log(`[vync] Found: ${chosen}`);
+        } else {
+          console.log('[vync] Found .vync files:');
+          discovered.forEach((f, i) => console.log(`  ${i + 1}. ${f}`));
+          const rl = await import('node:readline');
+          const iface = rl.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+          });
+          const answer = await new Promise<string>((resolve) => {
+            iface.question(
+              `Select file (1-${discovered.length}), or "a" for all: `,
+              resolve
+            );
+          });
+          iface.close();
+          if (answer.toLowerCase() === 'a') {
+            for (const f of discovered) {
+              await vyncOpen(f, { foreground: false });
+            }
+            break;
+          }
+          const idx = parseInt(answer, 10) - 1;
+          if (isNaN(idx) || idx < 0 || idx >= discovered.length) {
+            console.error('[vync] Invalid selection.');
+            process.exit(1);
+          }
+          chosen = discovered[idx];
+        }
+        await vyncOpen(chosen, { foreground });
+      } else {
+        await vyncOpen(filePath, { foreground });
       }
-      await vyncOpen(filePath, { foreground });
       break;
     }
     case 'close': {
