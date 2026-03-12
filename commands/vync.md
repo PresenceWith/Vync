@@ -27,7 +27,7 @@ node "$VYNC_HOME/bin/vync.js" <subcommand> [args]
 - `read [file]` — diff 실행 → 의미적 번역
 - `update <instruction>` — diff 확인 → 맥락+지시 기반 .vync 수정 + 서버 열기
 
-For these, use the Agent tool with `subagent_type: "vync-translator"`.
+For these, use the Agent tool with `subagent_type: "vync:vync-translator"`.
 
 ## Sub-agent 호출 절차
 
@@ -48,7 +48,7 @@ For these, use the Agent tool with `subagent_type: "vync-translator"`.
 ```
 Agent({
   description: "Vync create visualization",
-  subagent_type: "vync-translator",
+  subagent_type: "vync:vync-translator",
   mode: "bypassPermissions",
   prompt: "## 작업: Create\n파일: <absolute_path>\n\n## 대화 맥락\n<메인 세션이 요약한 현재 논의 상황, 2-5문장>\n\n## 지시\n<구체적 지시 or '맥락에 맞게 판단해서 시각화해줘'>\n<선호하는 유형이 있으면: 'mindmap 형식으로' 등>"
 })
@@ -66,7 +66,7 @@ Agent({
 ```
 Agent({
   description: "Vync read + translate diff",
-  subagent_type: "vync-translator",
+  subagent_type: "vync:vync-translator",
   mode: "bypassPermissions",
   prompt: "## 작업: Read\n파일: <absolute_path>\n\n## 대화 맥락\n<현재 논의 상황>\n\n## 유저 피드백 (diff)\n<diff 결과>\n\n## 지시\n위 변경사항을 대화 맥락에 비춰 의미적으로 번역해줘."
 })
@@ -84,7 +84,7 @@ Agent({
 ```
 Agent({
   description: "Vync update visualization",
-  subagent_type: "vync-translator",
+  subagent_type: "vync:vync-translator",
   mode: "bypassPermissions",
   prompt: "## 작업: Update\n파일: <absolute_path>\n\n## 대화 맥락\n<현재 논의 상황>\n\n## 유저 피드백 (diff)\n<diff 결과 or '없음'>\n\n## 지시\n<구체적 수정 지시>"
 })
