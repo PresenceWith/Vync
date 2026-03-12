@@ -38,7 +38,7 @@ app.whenReady().then(async () => {
   if (!filePath) {
     const result = await dialog.showOpenDialog({
       filters: [{ name: 'Vync Canvas', extensions: ['vync'] }],
-      properties: ['openFile'],
+      properties: ['openFile', 'showHiddenFiles'],
     });
     if (result.canceled || result.filePaths.length === 0) {
       app.quit();
