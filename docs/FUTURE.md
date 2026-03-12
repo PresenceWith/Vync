@@ -128,3 +128,25 @@ D-008에서 Last Write Wins로 결정. 후속 개선 옵션:
 | `vync watch` | UI 없이 파일 감시 데몬 (자동 변환 파이프라인용) |
 | 업스트림 (Drawnix) 추적 | 주기적 upstream diff, 핵심 변경 최소화 |
 | 역변환 | PlaitElement[] → Markdown/Mermaid (기술적 난이도 높음) |
+
+---
+
+## 6. .vync 파일 연결 UX (2026-03-12 기획)
+
+### 배경
+DMG 설치 시 `electron-builder.yml`의 `fileAssociations` + `UTExportedTypeDeclarations`로 .vync 파일 연결이 자동 등록됨.
+개발 모드(`git clone + npm install`)에서는 CLI가 주 진입점이며, OS 파일 연결은 불필요.
+
+### P2: 앱 첫 실행 안내 다이얼로그
+- 패키징 앱 첫 실행 시 "Finder에서 .vync 파일 > 우클릭 > 이 앱으로 열기 > 항상" 안내
+- Electron 메뉴 Help > "How to set as default app" 도움말 항목 추가
+- 참고: `app.setAsDefaultProtocolClient()`은 프로토콜 전용이므로 파일 확장자 기본 앱 등록은 네이티브 API 필요 → 안내 다이얼로그가 현실적
+
+### P3: .vync 전용 파일 아이콘
+- `.icns` (macOS) / `.ico` (Windows) 커스텀 아이콘 디자인
+- `electron-builder.yml`의 `fileAssociations.icon` 필드에 등록
+- Finder/탐색기에서 .vync 파일의 시각적 구분
+
+### 완료된 P1
+- `vync open .` / `vync open` (인자 없이) — 디렉토리 내 .vync 파일 자동 발견
+- UTI 등록 (`com.vync.canvas`) — `electron-builder.yml`의 `mac.extendInfo.UTExportedTypeDeclarations`

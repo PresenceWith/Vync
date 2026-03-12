@@ -13,6 +13,16 @@ mac:
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.inherit.plist
   notarize: true
+  extendInfo:
+    UTExportedTypeDeclarations:
+      - UTTypeIdentifier: com.vync.canvas
+        UTTypeDescription: Vync Canvas
+        UTTypeConformsTo:
+          - public.json
+          - public.data
+        UTTypeTagSpecification:
+          public.filename-extension:
+            - vync
 
 dmg:
   title: Vync
@@ -29,6 +39,7 @@ fileAssociations:
   - ext: vync
     name: Vync Canvas
     role: Editor
+    mimeType: application/vync
 
 files:
   - dist/electron/**/*
