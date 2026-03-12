@@ -119,4 +119,4 @@ feat/xyz        ●──●    ●──●     (short-lived feature branches)
 - Frontend: onChange → 300ms debounce → PUT /api/sync?file=<path>
 - WebSocket: file-scoped broadcast (A.vync changes only reach A.vync clients)
 - Hub WS: no `?file=` param → receives file registration/unregistration events for multi-tab UI
-- Multi-tab UI: TabBar component, active tab only mounted, `+` dropdown for reopening closed tabs
+- Multi-tab UI: TabBar component, active tab only mounted, `+` dropdown with "Reopen" (closed tabs) and "Open" (discovered unregistered `.vync` files via `GET /api/files/discover`)

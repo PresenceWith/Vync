@@ -352,7 +352,7 @@ Stage 3: 메인 세션 — Sub-agent prose + 대화 맥락 → 인사이트
 
 **근거**: 각 단계가 가장 잘하는 것을 담당. 코드=정밀 계산, LLM=의미 번역, 메인=맥락 해석.
 **PoC 검증**: H1(diff 의미 번역) PASS, H2(맥락 효과) PASS (2026-03-11)
-**설계 문서**: `docs/plans/2026-03-11-diff-pipeline-redesign.md`
+**설계 문서**: `docs/archive/2026-03-11-diff-pipeline-redesign.md`
 
 **재검토 조건**: Sub-agent 번역 품질이 실사용에서 불충분할 경우
 
@@ -375,6 +375,6 @@ Sub-agent의 2가지 역할:
 **입력**: 대화 맥락 + 프로그래밍적 diff + 지시
 **근거**: 메인 세션은 대화에 집중, Sub-agent는 시각화에 집중. 역할 분리 명확화.
 **PoC 검증**: H3(자율 시각화 판단) PASS — mindmap 자율 선택, 16노드/3단계, validate 통과 (2026-03-11)
-**설계 문서**: `docs/plans/2026-03-11-diff-pipeline-redesign.md`
+**설계 문서**: `docs/archive/2026-03-11-diff-pipeline-redesign.md`
 
 **재검토 조건**: 자율 판단 품질이 실사용에서 불충분할 경우

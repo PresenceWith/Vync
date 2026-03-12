@@ -88,6 +88,7 @@
 | `/api/health` | GET | 서버 상태 (`{ version: 2, mode: 'hub', fileCount }`) |
 | `/api/files` | GET | 등록된 파일 목록 (`{ files: ['/path/to/a.vync', ...] }`) |
 | `/api/files` | POST | 파일 등록 (`{ filePath }` → `201 Created` / `200 OK`) |
+| `/api/files/discover` | GET | 미등록 `.vync` 파일 탐색 (`{ files: [...] }`, 최대 100개) |
 | `/api/files?file=<path>` | DELETE | 특정 파일 해제 |
 | `/api/files?all=true` | DELETE | 전체 파일 해제 |
 | `/api/sync?file=<path>` | GET | 파일 내용 읽기 (VyncFile JSON) |
