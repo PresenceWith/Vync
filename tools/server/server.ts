@@ -218,7 +218,7 @@ export async function startServer(
 
   if (mode === 'production' && options.staticDir) {
     app.use(express.static(options.staticDir));
-    app.get('*', (_req, res) => {
+    app.get('*path', (_req, res) => {
       res.sendFile(path.join(options.staticDir!, 'index.html'));
     });
   } else if (mode === 'development') {
