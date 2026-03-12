@@ -60,3 +60,6 @@ server.log
 
 # Worktrees
 .worktrees/
+
+# Docs — archived session/design records
+docs/archive/

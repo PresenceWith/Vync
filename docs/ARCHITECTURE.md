@@ -81,19 +81,40 @@
 
 단일 사용자 시나리오에서는 동시 편집이 드물다. 발생하더라도 양쪽이 즉시 최종 상태로 동기화되므로 사용자가 곧바로 재편집 가능.
 
-### 2.4 API 엔드포인트 (→ D-014)
+### 2.4 Diff 파이프라인 (→ D-015, D-016)
+
+```
+vync diff <file>  (프로그래밍적 diff)
+  → .lastread 스냅샷 vs 현재 .vync 파일 비교
+  → ID 기반 구조적 diff (추가/삭제/변경 노드 감지)
+  → 레이아웃 필드 무시 (points, width, height 등 — 레이아웃 엔진이 관리)
+  → 트리 형태 텍스트 출력 (마인드맵은 계층 구조 유지)
+  → .lastread 스냅샷 갱신 (--no-snapshot으로 억제 가능)
+```
+
+**3단계 파이프라인 (D-015)**:
+```
+Stage 1: vync diff (코드)       — .lastread vs .vync 프로그래밍적 비교 → 정밀한 구조 변경
+Stage 2: Sub-agent (LLM)        — 맥락 + diff → 의미적 번역 + 시각화 전략 판단/실행
+Stage 3: 메인 세션               — Sub-agent prose + 대화 맥락 → 인사이트
+```
+
+**Sub-agent 역할 (D-016)**: 시각화 전문가 — 대화 맥락과 diff를 이해하고 시각화 전략을 자율 판단하여 .vync 파일을 작성/수정한다.
+
+### 2.5 API 엔드포인트 (→ D-014, file discovery 포함)
 
 | 엔드포인트 | 메서드 | 설명 |
 |-----------|--------|------|
-| `/api/health` | GET | 서버 상태 (`{ version: 2, mode: 'hub', fileCount }`) |
+| `/api/health` | GET | 서버 상태 (`{ version: 2, mode: 'hub', pid, fileCount }`) |
 | `/api/files` | GET | 등록된 파일 목록 (`{ files: ['/path/to/a.vync', ...] }`) |
 | `/api/files` | POST | 파일 등록 (`{ filePath }` → `201 Created` / `200 OK`) |
+| `/api/files/discover` | GET | 미등록 `.vync` 파일 탐색 (`{ files: [...] }`, 최대 100개) |
 | `/api/files?file=<path>` | DELETE | 특정 파일 해제 |
 | `/api/files?all=true` | DELETE | 전체 파일 해제 |
 | `/api/sync?file=<path>` | GET | 파일 내용 읽기 (VyncFile JSON) |
 | `/api/sync?file=<path>` | PUT | 파일 내용 쓰기 (VyncFile JSON body) |
 
-### 2.5 WebSocket 프로토콜 (→ D-014)
+### 2.6 WebSocket 프로토콜 (→ D-014)
 
 **파일 스코프 WS** (`ws://localhost:3100/ws?file=<absolutePath>`):
 - 특정 파일의 변경 알림 수신
@@ -118,7 +139,7 @@
 | 파일 포맷 | .vync (JSON) | D-005 |
 | CLI | Node.js (bin 스크립트) | D-006 |
 | 패키지 매니저 | npm + nx monorepo | D-011 |
-| 데스크톱 | Electron + electron-builder (macOS DMG) | D-012 |
+| 데스크톱 | Electron + electron-builder (macOS DMG, 코드 서명 + 공증) | D-012 |
 | 테스트 | Vitest | Vite 생태계, TS 네이티브 |
 
 ---
@@ -337,7 +358,7 @@ Vync/                              # nx monorepo (Drawnix 포크 기반)
 │       ├── main.ts                # CLI 진입점 (init/open/close/stop/diff 라우팅)          [VYNC 수정: Phase 8, diff 추가]
 │       ├── init.ts                # vync init: 빈 .vync 파일 생성
 │       ├── open.ts                # vync open/close/stop: 허브 모드 + PID JSON 포맷       [VYNC 수정: Phase 8]
-│       ├── diff.ts                # vync diff: 프로그래밍적 diff (.lastread vs .vync)      [VYNC 추가: D-015]
+│       ├── diff.ts                # vync diff: ID 기반 구조적 diff (.lastread vs .vync)     [VYNC 추가: D-015]
 │       ├── resolve.ts             # resolveVyncPath(): 경로 해석 (bare name → .vync/ 하위)
 │       └── __tests__/
 │           ├── init.test.ts       # init 유닛 테스트
@@ -449,18 +470,32 @@ vync init /tmp/test      → /tmp/test.vync         (절대경로)
 ```
 `bin/vync.js`가 `VYNC_CALLER_CWD` 환경변수로 호출자의 원래 CWD를 전달.
 
-**서버 시작 (`vync open <file>`)** — 허브 모드 (2-state 감지):
+**서버 시작 (`vync open <file>`)** — 허브 모드 (2-state 감지 + recovery):
 ```
 1. 경로 해석 (resolveVyncPath) → 파일 존재 확인 → 없으면 에러 메시지 + 종료
-2. 기존 서버 상태 확인 (2-state):
-   - PID 파일 읽기 → 프로세스 존재 확인 (kill 0) → HTTP 헬스체크 (GET /api/health)
-   - running: 서버 실행 중 → POST /api/files로 파일 등록 + 브라우저 열기
-   - not-running: 서버 없음 → 새 서버 시작
+2. 기존 서버 상태 확인 (2-state + port probe fallback):
+   a. PID 파일 읽기 → 프로세스 존재 확인 (kill 0) → HTTP 헬스체크 (GET /api/health)
+   b. PID 파일 없음 또는 PID 프로세스 죽음 → 포트 프로브 (GET /api/health on :3100)
+      - 포트에서 Vync 서버 발견 (version: 2 + pid) → PID 파일 복구 + 재사용
+   c. running: 서버 실행 중 → POST /api/files로 파일 등록 + 브라우저 열기
+   d. not-running: 서버 없음 → 새 서버 시작
 3. [Electron 모드 — 기본] electron dist/electron/main.js <file>을 detached spawn
    [tsx 데몬 모드 — 폴백] tsx로 server.ts를 detached 자식 프로세스로 spawn
    [포그라운드 모드 — --foreground] 현재 프로세스 내에서 startServer() 직접 호출
 4. 300ms 간격 폴링으로 서버 준비 대기 (최대 10초)
+   - 폴링 성공 시 health.pid vs childPid 비교 → ghost server 감지 시 PID 파일 교정
+   - registerFile 호출 (Electron/daemon 모두 동일)
 5. PID 파일에 ServerInfo JSON 기록
+```
+
+**Electron EADDRINUSE Recovery**:
+```
+Electron이 startServer() 시 EADDRINUSE 에러 발생
+  → GET /api/health on :3100 (AbortSignal 2초 타임아웃)
+  → version: 2 확인 → 기존 서버 재사용 (shutdown: no-op)
+  → POST /api/files로 파일 등록
+  → 기존 서버를 죽이지 않음 (다른 세션의 서버일 수 있음)
+  → version 불일치 또는 응답 없음 → 에러 다이얼로그 + 종료
 ```
 
 **파일 해제 (`vync close [file]`)** — 허브 모드:
