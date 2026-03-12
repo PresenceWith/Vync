@@ -22,6 +22,18 @@ npm run build:web        # Build web app
 npm run package:desktop  # Package macOS DMG
 ```
 
+## Electron Bundle Sync (필수)
+
+`tools/server/`, `tools/electron/`, `packages/shared/` 파일을 수정한 경우, **반드시** Electron 번들을 리빌드해야 한다:
+
+```bash
+npx esbuild tools/electron/main.ts --bundle --platform=node --outdir=dist/electron --external:electron --packages=external --alias:@vync/shared=./packages/shared/src/index.ts --sourcemap
+```
+
+- **왜**: Electron dev 모드(`npm run dev:desktop`)는 `dist/electron/main.js` 번들을 실행함. 소스만 수정하고 번들을 안 빌드하면 변경이 반영되지 않음
+- **언제**: 위 디렉토리 파일 수정 후, 커밋 전에 반드시 실행
+- **DMG 리패키징**: `npm run package:desktop` — 유저가 명시적으로 요청할 때만 실행 (2-3분 소요, 코드 서명+공증 포함)
+
 ## Claude Code Plugin
 
 **Install**: `npm install` (postinstall → marketplace 등록 + 캐시 동기화)
