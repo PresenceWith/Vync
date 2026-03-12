@@ -26,7 +26,10 @@ export function TabBar({
   useEffect(() => {
     if (!dropdownOpen) return;
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     };
@@ -40,25 +43,29 @@ export function TabBar({
 
   return (
     <div className="vync-tab-bar">
-      {tabs.map((tab) => (
-        <div
-          key={tab.filePath}
-          className={`vync-tab ${activeFilePath === tab.filePath ? 'vync-tab--active' : ''}`}
-          title={tab.filePath}
-          onClick={() => onTabClick(tab.filePath)}
-        >
-          <span>{tab.label}</span>
-          <button
-            className="vync-tab__close"
-            onClick={(e) => {
-              e.stopPropagation();
-              onTabClose(tab.filePath);
-            }}
+      <div className="vync-tab-scroll">
+        {tabs.map((tab) => (
+          <div
+            key={tab.filePath}
+            className={`vync-tab ${
+              activeFilePath === tab.filePath ? 'vync-tab--active' : ''
+            }`}
+            title={tab.filePath}
+            onClick={() => onTabClick(tab.filePath)}
           >
-            ×
-          </button>
-        </div>
-      ))}
+            <span>{tab.label}</span>
+            <button
+              className="vync-tab__close"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTabClose(tab.filePath);
+              }}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
       <div className="vync-tab-add" ref={dropdownRef}>
         <span onClick={() => setDropdownOpen(!dropdownOpen)}>+</span>
         {dropdownOpen && (
