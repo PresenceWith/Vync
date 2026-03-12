@@ -131,7 +131,15 @@ D-008에서 Last Write Wins로 결정. 후속 개선 옵션:
 
 ---
 
-## 6. .vync 파일 연결 UX (2026-03-12 기획)
+## 6. .vync Document Package 전환 (미결정)
+
+> **결정 필요** — [계획 문서](./plans/2026-03-12-vync-document-package.md)
+
+`.vync` 확장자를 단일 JSON 파일에서 macOS Document Package(디렉토리 번들)로 전환. Finder에서 `project.vync` 더블클릭 → Electron이 내부 캔버스 목록 표시. **Breaking change**: 기존 단일 파일 워크플로우 전체 변경, 마이그레이션 필수. 결정 사항과 영향 범위는 계획 문서 참조.
+
+---
+
+## 7. .vync 파일 연결 UX (2026-03-12 기획)
 
 ### 배경
 DMG 설치 시 `electron-builder.yml`의 `fileAssociations` + `UTExportedTypeDeclarations`로 .vync 파일 연결이 자동 등록됨.
