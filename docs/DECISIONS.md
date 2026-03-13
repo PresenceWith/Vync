@@ -25,6 +25,7 @@
 | D-014 | [멀티 파일: Hub Server](#d-014) | 확정 | 2026-03-09 |
 | D-015 | [Diff 파이프라인: Hybrid Architecture](#d-015) | 확정 | 2026-03-11 |
 | D-016 | [Sub-agent 역할 확장: 시각화 전문가](#d-016) | 확정 | 2026-03-11 |
+| D-017 | [의미적 동기화: Semantic Sync](#d-017) | 확정 | 2026-03-13 |
 
 ---
 
@@ -378,3 +379,33 @@ Sub-agent의 2가지 역할:
 **설계 문서**: `docs/archive/2026-03-11-diff-pipeline-redesign.md`
 
 **재검토 조건**: 자율 판단 품질이 실사용에서 불충분할 경우
+
+---
+
+### D-017
+
+**의미적 동기화: Semantic Sync (구조 변경에서 사용자 의도 추론)**
+
+diff의 구조적 변경(Level 0)에 시각화 유형별 semantic annotation(Level 1)을 추가하고, Sub-agent가 대화 맥락과 결합하여 사용자 의도를 추론(Level 2)하는 파이프라인 개선.
+
+```
+Level 0: Raw Diff          "Moved: B — root → A"
+Level 1: Type-Aware        "위계 변경: B가 A의 하위 개념으로 재분류" (규칙 기반)
+Level 2: Intent Inference   "사용자가 B를 A에 종속되는 개념으로 판단" (LLM + 맥락)
+Level 3: Confirmed Intent   사용자 확인 (필요시에만)
+```
+
+**해석 주체**: Sub-agent (vync-translator) — D-013 연장, context window 보호 유지
+**모호성 처리**: 추론 + 대화 흐름 안에서 자연스러운 확인 (명시적 질문 지양)
+
+| 대안 | 기각 사유 |
+|------|----------|
+| 메인 세션 직접 해석 | diff 결과가 context window 소비, D-013 위배 |
+| Hybrid (diff annotation + 메인 해석) | sub-agent 역할 축소, D-016과 충돌 |
+| 항상 명시적 확인 | 대화 흐름 중단, Vync 철학(D-007) 위배 |
+
+**핵심 원칙**: 오추론의 비용이 낮음 (자연어 정정 한마디). **자연스러움 > 정확도**.
+**구현**: diff.ts semantic annotation + translator prompt 강화 + 반환 포맷 확장 (~80 LOC)
+**설계 문서**: `docs/plans/2026-03-13-semantic-sync-design.md`
+
+**재검토 조건**: semantic hint가 translator 추론 품질을 유의미하게 향상시키지 못할 경우

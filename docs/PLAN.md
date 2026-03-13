@@ -13,6 +13,7 @@
 - Server Lifecycle Fix (PR #10): 완료 (2026-03-11)
 - macOS 코드 서명 + 공증: 완료 (2026-03-11)
 - Tab Bar "+" 버튼 수정 (PR #11): 구현 완료, PR 대기 (2026-03-12)
+- Semantic Sync (D-017): 설계 완료, 구현 대기 (2026-03-13) — `docs/plans/2026-03-13-semantic-sync.md`
 
 ---
 
@@ -324,7 +325,7 @@
 
 **목표**: "+" 버튼이 정상 동작하여 사용자가 디스크의 미등록 .vync 파일을 브라우저에서 직접 열 수 있게 한다.
 **브랜치**: `fix/tab-add-button`
-**계획**: `docs/plans/2026-03-12-fix-tab-add-button.md`
+**계획**: `docs/archive/2026-03-12-fix-tab-add-button.md`
 
 ### Bug 1: CSS overflow 클리핑
 - [x] TB.1 SCSS — `.vync-tab-scroll` 분리 (overflow-x: auto를 탭 스크롤 영역으로 이동)
