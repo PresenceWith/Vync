@@ -363,7 +363,7 @@ Vync/                              # nx monorepo (Drawnix 포크 기반)
 │       └── __tests__/
 │           ├── init.test.ts       # init 유닛 테스트
 │           ├── open.test.ts       # smart restart + vyncStop 유닛 테스트
-│           └── diff.test.ts       # diff 엔진 유닛 테스트 (15개)                          [VYNC 추가: D-015]
+│           └── diff.test.ts       # diff 엔진 유닛 테스트 (31개: 구조적 diff 16 + semantic hint 15)  [VYNC 추가: D-015, D-017]
 ├── bin/
 │   └── vync.js                    # CLI 진입점 (CommonJS, tsx spawn) [VYNC 추가]
 ├── .claude-plugin/                # Claude Code 플러그인 메타 (marketplace 표준) [VYNC 추가]

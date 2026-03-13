@@ -17,7 +17,10 @@ interface DiffChange {
   id: string;
   text: string;
   detail: string;
+  semanticHint?: string;
 }
+
+type VizType = 'mindmap' | 'flowchart' | 'generic';
 
 export interface DiffResult {
   filePath: string;
@@ -201,6 +204,107 @@ export function computeDiff(
   return changes;
 }
 
+// --- Visualization type detection (S-1: file-level) ---
+
+export function detectVizType(elements: Record<string, unknown>[]): VizType {
+  if (elements.length === 0) return 'generic';
+
+  const rootType = elements[0].type as string | undefined;
+  if (rootType === 'mindmap') return 'mindmap';
+
+  // Geometry with arrow-lines → flowchart
+  if (rootType === 'geometry') {
+    const hasArrow = elements.some(
+      (el) => (el.type as string) === 'arrow-line'
+    );
+    return hasArrow ? 'flowchart' : 'generic';
+  }
+
+  return 'generic';
+}
+
+// --- Semantic hint enrichment (S-4: separated from computeDiff) ---
+
+export function enrichWithSemanticHints(
+  changes: DiffChange[],
+  vizType: VizType,
+  currentElements: Record<string, unknown>[],
+  snapshotElements: Record<string, unknown>[]
+): DiffChange[] {
+  if (vizType === 'generic' || vizType === 'flowchart') return changes;
+
+  // Build maps for parent lookup
+  const currentMap = new Map<string, FlatNode>();
+  const snapshotMap = new Map<string, FlatNode>();
+  flattenElements(currentElements, null, currentMap);
+  flattenElements(snapshotElements, null, snapshotMap);
+
+  // S-2: Detect multi-moved grouping pattern first
+  const movedChanges = changes.filter((c) => c.kind === 'moved');
+  const groupedByTarget = new Map<string, DiffChange[]>();
+  for (const mc of movedChanges) {
+    const node = currentMap.get(mc.id);
+    const parentKey = node?.parentId ?? 'root';
+    const existing = groupedByTarget.get(parentKey) || [];
+    existing.push(mc);
+    groupedByTarget.set(parentKey, existing);
+  }
+
+  // Find groups of 2+ moved to same parent
+  const groupedIds = new Set<string>();
+  const groupHints = new Map<string, string>(); // changeId → group hint
+  for (const [parentKey, group] of groupedByTarget) {
+    if (group.length >= 2) {
+      const toParentText = findParentText(
+        currentMap,
+        parentKey === 'root' ? null : parentKey
+      );
+      const texts = group.map((c) => c.text).join(', ');
+      const hint = `그룹화: [${texts}]가 ${toParentText} 하위로 통합`;
+      for (const c of group) {
+        groupedIds.add(c.id);
+        groupHints.set(c.id, hint);
+      }
+    }
+  }
+
+  return changes.map((change) => {
+    let semanticHint: string | undefined;
+
+    if (groupedIds.has(change.id)) {
+      semanticHint = groupHints.get(change.id);
+    } else if (change.kind === 'moved') {
+      const snapshot = snapshotMap.get(change.id);
+      const current = currentMap.get(change.id);
+      if (snapshot && current) {
+        const fromParent = findParentText(snapshotMap, snapshot.parentId);
+        const toParent = findParentText(currentMap, current.parentId);
+        if (!current.parentId) {
+          semanticHint = `독립화: ${change.text}가 ${fromParent}에서 분리되어 독립 개념으로`;
+        } else if (!snapshot.parentId) {
+          semanticHint = `위계 변경: ${change.text}가 ${toParent}의 하위 개념으로 재분류됨`;
+        } else {
+          semanticHint = `재분류: ${change.text}가 ${fromParent}가 아닌 ${toParent}의 하위로`;
+        }
+      }
+    } else if (change.kind === 'added') {
+      const node = currentMap.get(change.id);
+      const parentText = findParentText(currentMap, node?.parentId ?? null);
+      semanticHint = `개념 추가: ${change.text}가 ${parentText}의 새 하위 요소로`;
+    } else if (change.kind === 'removed') {
+      const node = snapshotMap.get(change.id);
+      const parentText = findParentText(snapshotMap, node?.parentId ?? null);
+      semanticHint = `개념 제거: ${change.text}가 ${parentText}에서 삭제됨`;
+    } else if (change.kind === 'modified') {
+      // detail already has "Modified: "old" → "new""
+      const snapshot = snapshotMap.get(change.id);
+      semanticHint = `재정의: ${snapshot?.text ?? '?'} → ${change.text}`;
+    }
+
+    return semanticHint ? { ...change, semanticHint } : change;
+  });
+}
+
 // --- CLI entry point ---
 
 export async function vyncDiff(
@@ -241,6 +345,13 @@ export async function vyncDiff(
   let changes: DiffChange[] = [];
   if (snapshotExists) {
     changes = computeDiff(currentElements, snapshotElements);
+    const vizType = detectVizType(currentElements);
+    changes = enrichWithSemanticHints(
+      changes,
+      vizType,
+      currentElements,
+      snapshotElements
+    );
   }
 
   // Update snapshot (unless --no-snapshot)
@@ -277,6 +388,9 @@ export function formatDiffResult(result: DiffResult): string {
     lines.push('변경사항:');
     for (const change of result.changes) {
       lines.push(`  ${change.detail}`);
+      if (change.semanticHint) {
+        lines.push(`    → ${change.semanticHint}`);
+      }
     }
   } else {
     lines.push('변경사항: 없음');

@@ -13,7 +13,7 @@
 - Server Lifecycle Fix (PR #10): 완료 (2026-03-11)
 - macOS 코드 서명 + 공증: 완료 (2026-03-11)
 - Tab Bar "+" 버튼 수정 (PR #11): 구현 완료, PR 대기 (2026-03-12)
-- Semantic Sync (D-017): 설계 완료, 구현 대기 (2026-03-13) — `docs/plans/2026-03-13-semantic-sync.md`
+- Semantic Sync (D-017): 구현 완료, PR 대기 (2026-03-13) — `feat/semantic-sync` 브랜치
 
 ---
 
@@ -189,7 +189,7 @@
 - [x] 7-P1.3 vync 커맨드 Read 섹션에 diff 컨텍스트 반영
 - [x] 7-P1.4 설계문서 데이터 흐름 업데이트
 - [x] `/vync create` → sub-agent → 한 줄 요약 반환 흐름 동작
-- [x] Install script가 에이전트 파일을 `~/.claude/agents/`에 설치
+- [x] Install script가 플러그인을 마켓플레이스 캐시에 설치 (`install.sh` → rsync)
 
 ---
 
@@ -346,6 +346,35 @@
 
 ### 남은 작업
 - E2E 수동 검증 후 PR 생성 (fix/tab-add-button → develop)
+
+---
+
+## Semantic Sync (D-017/D-018)
+
+**목표**: diff의 구조적 변경에 시각화 유형별 semantic annotation을 추가하고, Sub-agent가 맥락과 결합하여 사용자 의도를 추론하는 파이프라인 개선.
+**브랜치**: `feat/semantic-sync`
+**설계**: `docs/plans/2026-03-13-semantic-sync-design.md`
+**구현 계획**: `docs/plans/2026-03-13-semantic-sync.md`
+
+- [x] SS.1 DiffChange 타입에 `semanticHint` 필드 추가
+- [x] SS.2 `detectVizType()` — 파일 레벨 시각화 유형 감지 (S-1)
+- [x] SS.3 `enrichWithSemanticHints()` — computeDiff와 분리된 semantic layer (S-4)
+- [x] SS.4 다중 moved 그룹화 패턴 감지 (S-2)
+- [x] SS.5 `formatDiffResult` hint 포함 출력
+- [x] SS.6 신규 테스트 15개 추가 (총 31 diff 테스트, 93 전체 PASS)
+- [x] SS.7 translator prompt: Read 반환 4-필드 구조화 (요약/의도/확신/제안)
+- [x] SS.8 translator prompt: Read 절차 해석 가이드 + 확신 레벨 판단
+- [x] SS.9 vync.md: 확신 레벨별 메인 세션 활용 가이드 (S-3)
+- [x] SS.10 플러그인 캐시 동기화 완료
+
+**완료 기준**:
+- [x] `vync diff`가 mindmap에서 semanticHint 포함 출력
+- [x] translator가 Read 시 4-필드 구조화 반환
+- [x] 메인 세션이 확신 레벨별 행동 가이드 보유
+- [x] 93개 전체 테스트 PASS (diff 31개 포함)
+
+### 남은 작업
+- PR 생성 (feat/semantic-sync → develop)
 
 ---
 

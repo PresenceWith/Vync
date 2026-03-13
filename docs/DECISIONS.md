@@ -26,6 +26,7 @@
 | D-015 | [Diff 파이프라인: Hybrid Architecture](#d-015) | 확정 | 2026-03-11 |
 | D-016 | [Sub-agent 역할 확장: 시각화 전문가](#d-016) | 확정 | 2026-03-11 |
 | D-017 | [의미적 동기화: Semantic Sync](#d-017) | 확정 | 2026-03-13 |
+| D-018 | [파일 유형 정책: 한 파일 = 한 시각화 유형](#d-018) | 확정 | 2026-03-13 |
 
 ---
 
@@ -405,7 +406,37 @@ Level 3: Confirmed Intent   사용자 확인 (필요시에만)
 | 항상 명시적 확인 | 대화 흐름 중단, Vync 철학(D-007) 위배 |
 
 **핵심 원칙**: 오추론의 비용이 낮음 (자연어 정정 한마디). **자연스러움 > 정확도**.
-**구현**: diff.ts semantic annotation + translator prompt 강화 + 반환 포맷 확장 (~80 LOC)
+**구현 세부 결정 (S-1~S-4)**:
+- **S-1**: 파일 레벨 유형 감지 (D-018에 의해 혼합 캔버스 구조적 방지)
+- **S-2**: 복합 패턴은 다중 moved(그룹화)만 (Phase 1). moved+modified 결합은 관찰 후 결정.
+- **S-3**: 확신 낮음 시 간략히 언급 ("구조에 약간 변화가 있네요"). 무시 안 함.
+- **S-4**: enrichWithSemanticHints()를 computeDiff와 분리. 기존 테스트 무변경.
+
+**구현**: diff.ts semantic annotation + translator prompt 강화 + 반환 포맷 확장 (~95 LOC)
 **설계 문서**: `docs/plans/2026-03-13-semantic-sync-design.md`
+**구현 계획**: `docs/plans/2026-03-13-semantic-sync.md`
 
 **재검토 조건**: semantic hint가 translator 추론 품질을 유의미하게 향상시키지 못할 경우
+
+---
+
+### D-018
+
+**파일 유형 정책: 한 파일 = 한 시각화 유형**
+
+하나의 `.vync` 파일에는 하나의 시각화 유형만 포함한다. 다른 유형이 필요하면 별도 파일을 생성한다.
+
+- **mindmap** 파일에 flowchart 노드를 혼합하지 않음
+- 대화 중 다른 시각화 형식이 필요하면 `/vync create`로 새 파일 생성
+- vync-translator의 create/update 시 기존 파일의 유형을 유지
+
+| 대안 | 기각 사유 |
+|------|----------|
+| 혼합 캔버스 허용 | 유형별 semantic annotation이 노드 레벨로 복잡해짐, 해석 안정성 저하 |
+| 파일 내 섹션으로 유형 분리 | .vync 포맷에 섹션 개념 없음, 복잡성 증가 |
+
+**근거**: D-017(Semantic Sync)에서 파일 레벨 유형 감지를 채택한 전제 조건. 혼합 캔버스를 방지하면 시각화 유형 감지가 구조적으로 안전해지고, semantic annotation의 정확도가 보장됨. 멀티 파일/멀티 탭(D-014)이 이미 지원되므로 별도 파일 생성의 UX 비용이 낮음.
+
+**영향 범위**: vync-translator (create/update 행동 규칙), diff.ts (파일 레벨 유형 감지 근거)
+
+**재검토 조건**: 사용자가 한 캔버스에서 여러 유형을 동시에 필요로 하는 패턴이 빈번히 발생할 경우
