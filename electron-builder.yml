@@ -49,5 +49,8 @@ files:
   - "!node_modules/**/*.{md,map,ts}"
   - "!**/node_modules/.cache/**"
 
+asarUnpack:
+  - dist/apps/web/**/*
+
 extraMetadata:
   main: dist/electron/main.js

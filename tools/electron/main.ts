@@ -86,7 +86,13 @@ async function openFile(filePath: string): Promise<void> {
       const isDev = !app.isPackaged;
       const staticDir = isDev
         ? undefined
-        : path.join(process.resourcesPath, 'dist', 'apps', 'web');
+        : path.join(
+            process.resourcesPath,
+            'app.asar.unpacked',
+            'dist',
+            'apps',
+            'web'
+          );
       serverHandle = await startServer({
         initialFile: resolved,
         port: 3100,
