@@ -81,11 +81,12 @@ async function probePort(): Promise<{
     const body = await res.json();
     if (body.version !== 2) return { running: false, info: null };
 
-    // Recover PID file from health response
+    // Recover PID file from health response, preserving existing mode if available
+    const existingInfo = await readServerInfo().catch(() => null);
     const recoveredInfo: ServerInfo = {
       version: 2,
       pid: body.pid,
-      mode: 'daemon',
+      mode: existingInfo?.mode ?? 'daemon',
       port: PORT,
     };
     await writeServerInfo(recoveredInfo);
@@ -394,10 +395,14 @@ export async function vyncOpen(
   const port = info?.port ?? PORT;
 
   if (running) {
-    // Hub mode: register file and open browser
+    // Hub mode: register file
     console.log('[vync] Server running, registering file...');
     await registerFile(port, resolved);
-    await openBrowserWithFile(port, resolved);
+    if (info?.mode !== 'electron') {
+      await openBrowserWithFile(port, resolved);
+    } else {
+      console.log('[vync] File registered. Electron will update via Hub WS.');
+    }
     return;
   }
 
