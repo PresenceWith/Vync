@@ -19,7 +19,7 @@ description: Edit .vync canvas files (PlaitElement JSON). Use when creating or m
 
 `idCreator(5)` — 5-char random string from: `ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz`
 All IDs must be unique across the entire file (including nested children).
-Generate with: `node ~/.claude/skills/vync-editing/scripts/generate-id.js [count]`
+Generate with: `node "$VYNC_HOME/skills/vync-editing/scripts/generate-id.js" [count]`
 
 ## Editing Workflow
 
@@ -29,7 +29,7 @@ Generate with: `node ~/.claude/skills/vync-editing/scripts/generate-id.js [count
    - Geometry (shapes): `references/geometry.md`
    - Arrow lines: `references/arrow-line.md`
    - Coordinate system: `references/coordinates.md`
-3. **Generate IDs** using `node ~/.claude/skills/vync-editing/scripts/generate-id.js <count>`
+3. **Generate IDs** using `node "$VYNC_HOME/skills/vync-editing/scripts/generate-id.js" <count>`
 4. **Create** valid PlaitElement[] JSON following the reference
 5. **Write** to file — PostToolUse hook will auto-validate
 
@@ -82,9 +82,9 @@ Generate with: `node ~/.claude/skills/vync-editing/scripts/generate-id.js [count
 ## Validation
 
 Files are auto-validated by PostToolUse hook on Write/Edit.
-Manual check: `node ~/.claude/skills/vync-editing/scripts/validate.js <file.vync>`
+Manual check: `node "$VYNC_HOME/skills/vync-editing/scripts/validate.js" <file.vync>`
 
 ## Example Files
 
-- `~/.claude/skills/vync-editing/assets/mindmap.vync` — 3-level mindmap
-- `~/.claude/skills/vync-editing/assets/flowchart.vync` — 3 shapes + 2 arrows
+- `$VYNC_HOME/skills/vync-editing/assets/mindmap.vync` — 3-level mindmap
+- `$VYNC_HOME/skills/vync-editing/assets/flowchart.vync` — 3 shapes + 2 arrows
