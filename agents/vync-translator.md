@@ -14,8 +14,8 @@ permissionMode: bypassPermissions
 ## 핵심 규칙
 
 1. **vync-editing skill이 자동 로드됩니다.** 참조 문서(references/)를 활용하세요.
-2. **ID 생성**: `node ~/.claude/skills/vync-editing/scripts/generate-id.js <count>`
-3. **검증**: Write/Edit 후 반드시 `node ~/.claude/skills/vync-editing/scripts/validate.js <file>` 실행. 에러 시 수정 후 재작성. (PostToolUse hook은 sub-agent에서 발동하지 않음)
+2. **ID 생성**: `node "$VYNC_HOME/skills/vync-editing/scripts/generate-id.js" <count>`
+3. **검증**: Write/Edit 후 반드시 `node "$VYNC_HOME/skills/vync-editing/scripts/validate.js" <file>` 실행. 에러 시 수정 후 재작성. (PostToolUse hook은 sub-agent에서 발동하지 않음)
 4. **서버 열기**: 파일 작성 후 `node "$VYNC_HOME/bin/vync.js" open <file>` 실행 (idempotent).
 
 ## 시각화 판단 가이드
@@ -56,7 +56,7 @@ permissionMode: bypassPermissions
 2. 해당 타입의 참조 문서 Read (mindmap.md / geometry.md+arrow-line.md)
 3. ID 생성 → PlaitElement[] JSON 구성 (skill 규칙 준수)
 4. .vync 파일 Write (기존 파일 있으면 Read 후 merge)
-5. `node ~/.claude/skills/vync-editing/scripts/validate.js <file>` 실행. 실패 시 수정 후 재작성.
+5. `node "$VYNC_HOME/skills/vync-editing/scripts/validate.js" <file>` 실행. 실패 시 수정 후 재작성.
 6. 서버 열기
 7. 스냅샷 생성: 작성한 .vync 내용을 `<file>.lastread`에 Write
 8. 반환: 무엇을 어떤 구조로 시각화했는지 요약
@@ -81,15 +81,17 @@ permissionMode: bypassPermissions
 3. 맥락과 diff를 고려하여 수정 판단 + 실행
    - 구조적 변경(이동/재배치): Write로 전체 교체
    - 텍스트 수정/노드 추가: Edit로 부분 수정
-4. `node ~/.claude/skills/vync-editing/scripts/validate.js <file>` 실행. 실패 시 수정 후 재작성.
+4. `node "$VYNC_HOME/skills/vync-editing/scripts/validate.js" <file>` 실행. 실패 시 수정 후 재작성.
 5. 서버 열기
 6. 스냅샷 갱신: 수정된 .vync 내용을 `<file>.lastread`에 Write
 7. 반환: 무엇을 어떻게 변경했는지 요약
 
 ## Skill 로드 Fallback
 
-Skill tool이 사용 불가한 경우, 직접 Read:
-- `~/.claude/skills/vync-editing/SKILL.md`
-- `~/.claude/skills/vync-editing/references/mindmap.md`
-- `~/.claude/skills/vync-editing/references/geometry.md`
-- `~/.claude/skills/vync-editing/references/arrow-line.md`
+Skill tool이 사용 불가한 경우:
+1. Bash로 `echo $VYNC_HOME` 실행하여 프로젝트 루트 경로 확인
+2. 그 경로를 대입하여 아래 파일을 Read:
+   - `$VYNC_HOME/skills/vync-editing/SKILL.md`
+   - `$VYNC_HOME/skills/vync-editing/references/mindmap.md`
+   - `$VYNC_HOME/skills/vync-editing/references/geometry.md`
+   - `$VYNC_HOME/skills/vync-editing/references/arrow-line.md`

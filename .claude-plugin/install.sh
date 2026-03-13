@@ -58,7 +58,12 @@ echo "  [ok] Marketplace: PresenceWith-Vync (local: $PROJECT_ROOT)"
 echo "  [ok] Plugin: vync@PresenceWith-Vync enabled"
 echo "  [ok] Env: VYNC_HOME=$PROJECT_ROOT"
 
-# 3. Sync plugin cache via rsync (Claude Code copies symlinks to real dirs, so rsync is required)
+# 3. Copy plugin commands to project-level .claude/commands/ (non-namespaced access)
+mkdir -p "$PROJECT_ROOT/.claude/commands"
+cp "$PROJECT_ROOT/commands/vync.md" "$PROJECT_ROOT/.claude/commands/vync.md"
+echo "  [ok] Project command: /vync (non-namespaced alias)"
+
+# 4. Sync plugin cache via rsync (Claude Code copies symlinks to real dirs, so rsync is required)
 VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$PROJECT_ROOT/.claude-plugin/plugin.json','utf8')).version)")
 CACHE_BASE="$CLAUDE_DIR/plugins/cache/PresenceWith-Vync/vync"
 
@@ -90,7 +95,7 @@ rsync -a --delete \
   "$PROJECT_ROOT/" "$CACHE_DIR/"
 echo "  [ok] Cache synced: v$VERSION"
 
-# 4. Update installed_plugins.json (Claude Code reads active version from here)
+# 5. Update installed_plugins.json (Claude Code reads active version from here)
 INSTALLED="$CLAUDE_DIR/plugins/installed_plugins.json"
 node -e "
 const fs = require('fs');
@@ -112,7 +117,7 @@ fs.writeFileSync(path, JSON.stringify(data, null, 2));
 "
 echo "  [ok] installed_plugins.json: vync@PresenceWith-Vync v$VERSION"
 
-# 5. Done
+# 6. Done
 echo ""
 echo "[vync] Setup complete! Restart Claude Code to activate."
 echo ""
