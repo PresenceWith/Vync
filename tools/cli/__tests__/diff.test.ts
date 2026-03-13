@@ -2,7 +2,13 @@ import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { computeDiff, vyncDiff, formatDiffResult } from '../diff.js';
+import {
+  computeDiff,
+  vyncDiff,
+  formatDiffResult,
+  detectVizType,
+  enrichWithSemanticHints,
+} from '../diff.js';
 
 // --- Helper: build mindmap element ---
 
@@ -352,5 +358,330 @@ describe('formatDiffResult', () => {
     });
 
     expect(output).not.toContain('Snapshot updated.');
+  });
+});
+
+// --- detectVizType tests ---
+
+describe('detectVizType', () => {
+  it('returns mindmap for mindmap root element', () => {
+    const elements = [
+      mindmapEl('root', 'Project', [childEl('a', 'Design')], {
+        isRoot: true,
+      }),
+    ];
+    expect(detectVizType(elements)).toBe('mindmap');
+  });
+
+  it('returns flowchart for geometry with arrow-line', () => {
+    const elements = [
+      {
+        id: 'g1',
+        type: 'geometry',
+        shape: 'rectangle',
+        text: { children: [{ text: 'Start' }] },
+        children: [],
+      },
+      {
+        id: 'a1',
+        type: 'arrow-line',
+        children: [],
+      },
+    ];
+    expect(detectVizType(elements)).toBe('flowchart');
+  });
+
+  it('returns generic for geometry without arrow-line', () => {
+    const elements = [
+      {
+        id: 'g1',
+        type: 'geometry',
+        shape: 'rectangle',
+        text: { children: [{ text: 'Box' }] },
+        children: [],
+      },
+    ];
+    expect(detectVizType(elements)).toBe('generic');
+  });
+
+  it('returns generic for empty elements', () => {
+    expect(detectVizType([])).toBe('generic');
+  });
+
+  it('returns generic for unknown type', () => {
+    const elements = [{ id: 'x', type: 'custom', children: [] }];
+    expect(detectVizType(elements)).toBe('generic');
+  });
+});
+
+// --- enrichWithSemanticHints tests ---
+
+describe('enrichWithSemanticHints', () => {
+  it('adds hint for moved node (to child — 위계 변경)', () => {
+    // "리서치" was under root, now under "기획"
+    const snapshot = [
+      mindmapEl(
+        'root',
+        '프로젝트',
+        [childEl('a', '기획'), childEl('b', '리서치')],
+        { isRoot: true }
+      ),
+    ];
+    const current = [
+      mindmapEl(
+        'root',
+        '프로젝트',
+        [childEl('a', '기획', [childEl('b', '리서치')])],
+        { isRoot: true }
+      ),
+    ];
+    const changes = computeDiff(current, snapshot);
+    const enriched = enrichWithSemanticHints(
+      changes,
+      'mindmap',
+      current,
+      snapshot
+    );
+
+    expect(enriched).toHaveLength(1);
+    expect(enriched[0].kind).toBe('moved');
+    expect(enriched[0].semanticHint).toContain('재분류');
+    expect(enriched[0].semanticHint).toContain('리서치');
+    expect(enriched[0].semanticHint).toContain('기획');
+  });
+
+  it('adds hint for moved node to root (독립화)', () => {
+    const snapshot = [
+      mindmapEl(
+        'root',
+        '프로젝트',
+        [childEl('a', '기획', [childEl('b', '리서치')])],
+        { isRoot: true }
+      ),
+    ];
+    const current = [
+      mindmapEl('root', '프로젝트', [childEl('a', '기획')], { isRoot: true }),
+      {
+        id: 'b',
+        type: 'mindmap',
+        data: { topic: { children: [{ text: '리서치' }] } },
+        children: [],
+      },
+    ];
+    const changes = computeDiff(current, snapshot);
+    const enriched = enrichWithSemanticHints(
+      changes,
+      'mindmap',
+      current,
+      snapshot
+    );
+
+    const moved = enriched.find((c) => c.kind === 'moved');
+    expect(moved).toBeDefined();
+    expect(moved!.semanticHint).toContain('독립화');
+    expect(moved!.semanticHint).toContain('리서치');
+  });
+
+  it('adds hint for added node', () => {
+    const snapshot = [
+      mindmapEl('root', '프로젝트', [childEl('a', '기획')], { isRoot: true }),
+    ];
+    const current = [
+      mindmapEl(
+        'root',
+        '프로젝트',
+        [childEl('a', '기획'), childEl('b', '개발')],
+        { isRoot: true }
+      ),
+    ];
+    const changes = computeDiff(current, snapshot);
+    const enriched = enrichWithSemanticHints(
+      changes,
+      'mindmap',
+      current,
+      snapshot
+    );
+
+    expect(enriched).toHaveLength(1);
+    expect(enriched[0].semanticHint).toContain('개념 추가');
+    expect(enriched[0].semanticHint).toContain('개발');
+    expect(enriched[0].semanticHint).toContain('프로젝트');
+  });
+
+  it('adds hint for removed node', () => {
+    const snapshot = [
+      mindmapEl(
+        'root',
+        '프로젝트',
+        [childEl('a', '기획'), childEl('b', '개발')],
+        { isRoot: true }
+      ),
+    ];
+    const current = [
+      mindmapEl('root', '프로젝트', [childEl('a', '기획')], { isRoot: true }),
+    ];
+    const changes = computeDiff(current, snapshot);
+    const enriched = enrichWithSemanticHints(
+      changes,
+      'mindmap',
+      current,
+      snapshot
+    );
+
+    expect(enriched).toHaveLength(1);
+    expect(enriched[0].semanticHint).toContain('개념 제거');
+    expect(enriched[0].semanticHint).toContain('개발');
+  });
+
+  it('adds hint for modified text', () => {
+    const snapshot = [
+      mindmapEl('root', '프로젝트', [childEl('a', '설계')], { isRoot: true }),
+    ];
+    const current = [
+      mindmapEl('root', '프로젝트', [childEl('a', '아키텍처')], {
+        isRoot: true,
+      }),
+    ];
+    const changes = computeDiff(current, snapshot);
+    const enriched = enrichWithSemanticHints(
+      changes,
+      'mindmap',
+      current,
+      snapshot
+    );
+
+    expect(enriched).toHaveLength(1);
+    expect(enriched[0].semanticHint).toContain('재정의');
+    expect(enriched[0].semanticHint).toContain('설계');
+    expect(enriched[0].semanticHint).toContain('아키텍처');
+  });
+
+  it('detects multi-moved grouping (S-2)', () => {
+    // Move "인터뷰" and "설문" under "리서치"
+    const snapshot = [
+      mindmapEl(
+        'root',
+        '프로젝트',
+        [childEl('a', '리서치'), childEl('b', '인터뷰'), childEl('c', '설문')],
+        { isRoot: true }
+      ),
+    ];
+    const current = [
+      mindmapEl(
+        'root',
+        '프로젝트',
+        [
+          childEl('a', '리서치', [
+            childEl('b', '인터뷰'),
+            childEl('c', '설문'),
+          ]),
+        ],
+        { isRoot: true }
+      ),
+    ];
+    const changes = computeDiff(current, snapshot);
+    const enriched = enrichWithSemanticHints(
+      changes,
+      'mindmap',
+      current,
+      snapshot
+    );
+
+    // Both should have the same grouping hint
+    expect(enriched).toHaveLength(2);
+    expect(enriched[0].semanticHint).toContain('그룹화');
+    expect(enriched[0].semanticHint).toContain('인터뷰');
+    expect(enriched[0].semanticHint).toContain('설문');
+    expect(enriched[0].semanticHint).toContain('리서치');
+    expect(enriched[0].semanticHint).toBe(enriched[1].semanticHint);
+  });
+
+  it('skips hints for generic viz type', () => {
+    const snapshot = [
+      mindmapEl('root', 'Project', [childEl('a', 'A')], { isRoot: true }),
+    ];
+    const current = [
+      mindmapEl('root', 'Project', [childEl('a', 'A'), childEl('b', 'B')], {
+        isRoot: true,
+      }),
+    ];
+    const changes = computeDiff(current, snapshot);
+    const enriched = enrichWithSemanticHints(
+      changes,
+      'generic',
+      current,
+      snapshot
+    );
+
+    expect(enriched).toHaveLength(1);
+    expect(enriched[0].semanticHint).toBeUndefined();
+  });
+
+  it('skips hints for flowchart viz type', () => {
+    const snapshot = [
+      mindmapEl('root', 'Project', [childEl('a', 'A')], { isRoot: true }),
+    ];
+    const current = [
+      mindmapEl('root', 'Project', [childEl('a', 'A'), childEl('b', 'B')], {
+        isRoot: true,
+      }),
+    ];
+    const changes = computeDiff(current, snapshot);
+    const enriched = enrichWithSemanticHints(
+      changes,
+      'flowchart',
+      current,
+      snapshot
+    );
+
+    expect(enriched).toHaveLength(1);
+    expect(enriched[0].semanticHint).toBeUndefined();
+  });
+});
+
+// --- formatDiffResult with semantic hints ---
+
+describe('formatDiffResult with semanticHint', () => {
+  it('includes hint line after change detail', () => {
+    const output = formatDiffResult({
+      filePath: '/path/to/plan.vync',
+      tree: '  프로젝트\n  └── 기획\n      └── 리서치',
+      changes: [
+        {
+          kind: 'moved',
+          id: 'b',
+          text: '리서치',
+          detail: 'Moved: 리서치 — 프로젝트 → 기획',
+          semanticHint: '위계 변경: 리서치가 기획의 하위 개념으로 재분류됨',
+        },
+      ],
+      hasChanges: true,
+      snapshotUpdated: true,
+    });
+
+    expect(output).toContain('Moved: 리서치 — 프로젝트 → 기획');
+    expect(output).toContain(
+      '→ 위계 변경: 리서치가 기획의 하위 개념으로 재분류됨'
+    );
+  });
+
+  it('omits hint line when no semanticHint', () => {
+    const output = formatDiffResult({
+      filePath: '/path/to/plan.vync',
+      tree: '  Project',
+      changes: [
+        {
+          kind: 'added',
+          id: 'b',
+          text: 'Dev',
+          detail: 'Added: Dev (under Project)',
+        },
+      ],
+      hasChanges: true,
+      snapshotUpdated: true,
+    });
+
+    expect(output).toContain('Added: Dev (under Project)');
+    expect(output).not.toContain('→');
   });
 });
