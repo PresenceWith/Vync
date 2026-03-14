@@ -7,13 +7,21 @@
 
 ## 현재 상태
 
-**Phase**: Post-MVP 안정화 — 2026-03-12
+**Phase**: Post-MVP 안정화 — 2026-03-14
 - Phase 1~9 (MVP): 완료 (2026-03-07 ~ 2026-03-09)
 - Diff Pipeline (D-015/D-016): 완료 (2026-03-11)
 - Server Lifecycle Fix (PR #10): 완료 (2026-03-11)
 - macOS 코드 서명 + 공증: 완료 (2026-03-11)
-- Tab Bar "+" 버튼 수정 (PR #11): 구현 완료, PR 대기 (2026-03-12)
-- Semantic Sync (D-017): 구현 완료, PR 대기 (2026-03-13) — `feat/semantic-sync` 브랜치
+- Tab Bar "+" 버튼 수정 (PR #11): 완료 (2026-03-12, develop 병합)
+- Semantic Sync (D-017/D-018): 완료 (PR #14, 2026-03-13, develop 병합)
+- Plugin Path Fix (PR #15): 완료 ($VYNC_HOME 기반 경로, 2026-03-13, develop 병합)
+- Asar Unpacked Path Fix: 완료 (정적 파일 경로 수정, `fcba037`)
+- Fix: Electron/Web Sync + Duplicate Browser Opening: 완료 (2026-03-14, develop)
+  - PUT /api/sync 후 WebSocket 브로드캐스트 추가 (I-002)
+  - Electron 모드에서 `vync open` 시 브라우저 중복 열기 방지 (I-003)
+  - probePort() mode 보존 (I-004)
+  - 95개 테스트 PASS (신규 2개)
+- **develop → main 병합 필요** (develop가 main 대비 20+ 커밋 ahead)
 
 ---
 
@@ -342,10 +350,9 @@
 ### 검증
 - [x] TB.9 TypeScript 컴파일 확인
 - [x] TB.10 전체 테스트 PASS (72개)
-- [ ] TB.11 E2E 수동 검증 (6개 시나리오)
+- [x] TB.11 E2E 수동 검증
 
-### 남은 작업
-- E2E 수동 검증 후 PR 생성 (fix/tab-add-button → develop)
+**완료**: develop 병합 (`7b83ae8`), fix/tab-add-button 브랜치 삭제됨
 
 ---
 
@@ -373,8 +380,30 @@
 - [x] 메인 세션이 확신 레벨별 행동 가이드 보유
 - [x] 93개 전체 테스트 PASS (diff 31개 포함)
 
-### 남은 작업
-- PR 생성 (feat/semantic-sync → develop)
+**PR**: #14 (feat/semantic-sync → develop, 2026-03-13), feat/semantic-sync 브랜치 삭제됨
+
+---
+
+## Plugin Path Fix (PR #15)
+
+**목표**: 플러그인 스크립트 경로를 하드코딩(`~/.claude/skills/...`)에서 `$VYNC_HOME` 환경변수 기반으로 전환하여 마켓플레이스 설치 환경에서도 정상 동작하게 한다.
+**브랜치**: `fix/plugin-path`
+**계획**: `docs/plans/2026-03-13-plugin-path-fix.md`
+
+- [x] PP.1 `skills/vync-editing/SKILL.md` — 5곳 `$VYNC_HOME` 전환
+- [x] PP.2 `agents/vync-translator.md` — 7곳 `$VYNC_HOME` 전환 + fallback 섹션
+- [x] PP.3 PoC 3/3 PASS (sub-agent $VYNC_HOME 접근, 스크립트 실행, Read fallback)
+- [x] PP.4 E2E 검증 PASS (새 세션, `/vync create` 전체 흐름)
+- [x] PP.5 플러그인 캐시 동기화 완료
+
+**PR**: #15 (fix/plugin-path → develop, 2026-03-13)
+
+---
+
+## Asar Unpacked Path Fix
+
+**목표**: Electron 패키징 시 정적 파일 경로를 `asar.unpacked` 기반으로 수정.
+**커밋**: `fcba037` (fix(desktop): use asar.unpacked path for static assets)
 
 ---
 

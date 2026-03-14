@@ -203,6 +203,11 @@ export async function startServer(
         return;
       }
       await sync.writeFile(data);
+      registry.broadcastToFile(filePath, {
+        type: 'file-changed',
+        filePath,
+        data,
+      });
       res.json({ ok: true });
     } catch (err) {
       console.error('[vync] Error writing file:', err);

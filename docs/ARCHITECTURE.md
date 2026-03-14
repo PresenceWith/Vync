@@ -67,6 +67,8 @@
   → FileRegistry가 해당 파일의 SyncService를 조회
   → 서버가 원자적 쓰기 (tmp + rename)
   → content hash 업데이트 (에코 방지)
+  → 해당 파일의 WS 클라이언트에 file-changed 브로드캐스트
+  → PUT 클라이언트는 remoteUpdateUntilRef로 수신 무시 (에코 방지)
 ```
 
 ### 2.3 충돌 시나리오 (→ D-008: Last Write Wins)
@@ -353,7 +355,8 @@ Vync/                              # nx monorepo (Drawnix 포크 기반)
 │   │   ├── security.ts            # validateFilePath + hostGuard (LFI/DNS rebinding 방지)  [VYNC 추가: Phase 8]
 │   │   ├── file-watcher.ts        # chokidar 파일 감시 (unlink 이벤트 포함)
 │   │   ├── sync-service.ts        # 동기화 로직 (에코 방지 + 원자적 쓰기 + drain())
-│   │   └── ws-handler.ts          # WebSocket 메시지 핸들러 (파일 스코프 라우팅, ?file=)
+│   │   ├── ws-handler.ts          # WebSocket 메시지 핸들러 (파일 스코프 라우팅, ?file=)
+│   │   └── __tests__/             # 서버 테스트 (hub-ws, discover, security, multi-file-e2e, put-broadcast 등)
 │   └── cli/
 │       ├── main.ts                # CLI 진입점 (init/open/close/stop/diff 라우팅)          [VYNC 수정: Phase 8, diff 추가]
 │       ├── init.ts                # vync init: 빈 .vync 파일 생성
