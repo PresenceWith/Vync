@@ -291,7 +291,7 @@ Electron main process
 | general-purpose sub-agent + 반복 프롬프트 | Skill 자동 로드 불가, 매번 프롬프트 전달 비용 |
 | MCP 서버 (구조화 API) | MVP 범위 초과, 별도 프로세스 관리 필요 (→ D-010) |
 
-**설계 문서**: `docs/archive/2026-03-09-subagent-translator-design.md`
+**설계 문서**: `docs/archive/2026-03-09-subagent-translator-design.md` [삭제됨]
 
 **재검토 조건**: Claude Code의 에이전트 시스템이 변경되어 커스텀 에이전트 방식이 더 이상 유효하지 않을 때
 
@@ -328,8 +328,8 @@ vync open B.vync  ─→  POST /api/files  ─→       ↓
 - **M-8**: 보안 — validateFilePath(allowlist + `.vync` 확장자 + realpath) + Host 헤더 검증
 
 **구현**: 2단계 — 1단계: 허브 서버 + 멀티 윈도우, 2단계: 멀티 탭 UI
-**설계 문서**: `docs/archive/2026-03-09-multi-file-hub-design.md`
-**구현 계획**: `docs/archive/2026-03-09-multi-file-hub-implementation.md`
+**설계 문서**: `docs/archive/2026-03-09-multi-file-hub-design.md` [삭제됨]
+**구현 계획**: `docs/archive/2026-03-09-multi-file-hub-implementation.md` [삭제됨]
 
 **재검토 조건**: 단일 서버에서 동시 파일 수가 50개 이상으로 증가하여 성능 병목 발생 시
 
@@ -413,8 +413,8 @@ Level 3: Confirmed Intent   사용자 확인 (필요시에만)
 - **S-4**: enrichWithSemanticHints()를 computeDiff와 분리. 기존 테스트 무변경.
 
 **구현**: diff.ts semantic annotation + translator prompt 강화 + 반환 포맷 확장 (~95 LOC)
-**설계 문서**: `docs/plans/2026-03-13-semantic-sync-design.md`
-**구현 계획**: `docs/plans/2026-03-13-semantic-sync.md`
+**설계 문서**: `docs/archive/2026-03-13-semantic-sync-design.md`
+**구현 계획**: `docs/archive/2026-03-13-semantic-sync.md`
 
 **재검토 조건**: semantic hint가 translator 추론 품질을 유의미하게 향상시키지 못할 경우
 
