@@ -57,7 +57,7 @@ When editing `.vync` files, **always** use the `vync-editing` skill. Key rules:
 
 ## Architecture Decisions
 
-See `docs/DECISIONS.md` for the full registry (D-001 to D-014). Key ones:
+See `docs/DECISIONS.md` for the full registry (D-001 to D-018). Key ones:
 - **D-004**: Custom Node Server (not Next.js)
 - **D-008**: Last Write Wins (conflict resolution)
 - **D-009**: SHA-256 content hash + isWriting flag (echo prevention)
@@ -74,6 +74,8 @@ See `docs/DECISIONS.md` for the full registry (D-001 to D-014). Key ones:
 - `docs/ISSUES.md` — Issue registry (bugs, known problems)
 - `docs/FUTURE.md` — Future roadmap (MCP, AI Agent, pipelines)
 - `docs/WRAP.md` — Documentation sync rules
+- `docs/plans/` — Active/pending design & implementation plans
+- `docs/archive/` — Completed work documents (see `docs/archive/README.md`)
 
 ## Git Workflow
 

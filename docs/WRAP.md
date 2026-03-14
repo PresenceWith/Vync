@@ -29,6 +29,7 @@
 | JSON Schema 변경 | — | 섹션 4 확인 | D-005 확인 | — | — | — |
 | 버그/이슈 발견 | — | — | — | I-0XX 추가 | — | — |
 | 이슈 해결 | — | — | — | 상태 `resolved` | — | — |
+| 기능/수정 완료 (PR 병합 후) | 완료 요약 추가 | — | — | — | — | 현재 상태 + plans/→archive/ 이동, archive/README.md 갱신 |
 
 ---
 
@@ -75,6 +76,12 @@
 9. **플러그인 파일이 변경된 경우** (commands/, skills/, agents/, hooks/)
    - `bash .claude-plugin/install.sh` 실행 (캐시 rsync → 새 세션에서 반영)
 
+10. **plans/ → archive/ 이동** (기능/수정 PR이 develop에 병합된 경우)
+    - `git mv docs/plans/<file> docs/archive/`
+    - PLAN.md 완료 요약 테이블에 행 추가
+    - 관련 문서(DECISIONS.md 등)의 파일 경로 참조를 `docs/archive/`로 갱신
+    - `docs/archive/README.md` 인덱스에 항목 추가
+
 ---
 
 ## §3 /wrap-session 추가 체크리스트
@@ -96,6 +103,7 @@
 
 - 문서 내 파일 경로(`docs/`, `src/` 등)가 실제 파일 시스템과 일치하는가
 - 문서 간 링크(`[DECISIONS.md](./DECISIONS.md)` 등)가 유효한가
+- `docs/plans/`에 완료된(PR 병합) 파일이 남아있지 않은가 → `docs/archive/`로 이동
 
 ### 자기 참조
 
