@@ -71,6 +71,7 @@ See `docs/DECISIONS.md` for the full registry (D-001 to D-014). Key ones:
 - `docs/PLAN.md` — Implementation plan (phases, criteria)
 - `docs/ARCHITECTURE.md` — System architecture
 - `docs/DECISIONS.md` — Design decision registry
+- `docs/ISSUES.md` — Issue registry (bugs, known problems)
 - `docs/FUTURE.md` — Future roadmap (MCP, AI Agent, pipelines)
 - `docs/WRAP.md` — Documentation sync rules
 
