@@ -324,6 +324,16 @@ export async function vyncDiff(
   }
 
   const currentData = JSON.parse(currentRaw);
+
+  // Guard: graph files are not yet supported by diff
+  if (currentData.type === 'graph') {
+    return {
+      tree: `[${fileName}] Graph files are not yet supported by diff`,
+      changes: [],
+      snapshotUpdated: false,
+    };
+  }
+
   const currentElements = currentData.elements || [];
 
   // Build tree from current state

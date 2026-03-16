@@ -201,9 +201,25 @@ export async function startServer(
     }
     try {
       const data = req.body as VyncFile;
-      if (!data || !Array.isArray(data.elements)) {
+      if (!data) {
         res.status(400).json({ error: 'Invalid VyncFile format' });
         return;
+      }
+      if (data.type === 'graph') {
+        // Graph files: validate nodes and edges arrays
+        const gd = data as Record<string, unknown>;
+        if (!Array.isArray(gd.nodes) || !Array.isArray(gd.edges)) {
+          res
+            .status(400)
+            .json({ error: 'Graph file requires nodes and edges arrays' });
+          return;
+        }
+      } else {
+        // Canvas files (default): validate elements array
+        if (!Array.isArray(data.elements)) {
+          res.status(400).json({ error: 'Invalid VyncFile format' });
+          return;
+        }
       }
       await sync.writeFile(data);
       registry.broadcastToFile(filePath, {

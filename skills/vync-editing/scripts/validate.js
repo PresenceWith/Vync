@@ -81,30 +81,44 @@ try {
     'display',
   ]);
 
-  if (!Array.isArray(data.elements)) {
-    errors.push('"elements" must be an array');
-  } else {
-    // Check element IDs, shapes, and collect for duplicate detection
-    const ids = new Set();
-    function collectIds(elements, prefix) {
-      for (let i = 0; i < elements.length; i++) {
-        const el = elements[i];
-        const loc = prefix ? `${prefix}.children[${i}]` : `elements[${i}]`;
-        if (!el.id || typeof el.id !== 'string') {
-          errors.push(`${loc}: missing or invalid "id"`);
-        } else {
-          if (ids.has(el.id)) errors.push(`duplicate id: "${el.id}"`);
-          ids.add(el.id);
-        }
-        if (el.type === 'geometry' && el.shape && !validShapes.has(el.shape)) {
-          errors.push(
-            `${loc}: invalid shape "${el.shape}" (must be camelCase, e.g. "multiDocument" not "multi-document")`
-          );
-        }
-        if (Array.isArray(el.children)) collectIds(el.children, loc);
-      }
+  if (data.type === 'graph') {
+    // Graph files: validate nodes and edges
+    if (!Array.isArray(data.nodes)) {
+      errors.push('"nodes" must be an array for graph files');
     }
-    collectIds(data.elements, '');
+    if (!Array.isArray(data.edges)) {
+      errors.push('"edges" must be an array for graph files');
+    }
+  } else {
+    // Canvas files: validate elements (existing logic)
+    if (!Array.isArray(data.elements)) {
+      errors.push('"elements" must be an array');
+    } else {
+      const ids = new Set();
+      function collectIds(elements, prefix) {
+        for (let i = 0; i < elements.length; i++) {
+          const el = elements[i];
+          const loc = prefix ? `${prefix}.children[${i}]` : `elements[${i}]`;
+          if (!el.id || typeof el.id !== 'string') {
+            errors.push(`${loc}: missing or invalid "id"`);
+          } else {
+            if (ids.has(el.id)) errors.push(`duplicate id: "${el.id}"`);
+            ids.add(el.id);
+          }
+          if (
+            el.type === 'geometry' &&
+            el.shape &&
+            !validShapes.has(el.shape)
+          ) {
+            errors.push(
+              `${loc}: invalid shape "${el.shape}" (must be camelCase, e.g. "multiDocument" not "multi-document")`
+            );
+          }
+          if (Array.isArray(el.children)) collectIds(el.children, loc);
+        }
+      }
+      collectIds(data.elements, '');
+    }
   }
 
   if (errors.length > 0) {
