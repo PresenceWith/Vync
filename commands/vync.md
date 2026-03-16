@@ -24,7 +24,7 @@ node "$VYNC_HOME/bin/vync.js" <subcommand> [args]
 
 ### Sub-agent delegation (context window 보호)
 - `create <description>` — 맥락 분석 → 시각화 판단 → .vync 생성 + 서버 열기
-- `read [file]` — diff 실행 → 의미적 번역
+- `read [file]` — translator가 diff 실행 → 의미적 번역 → 메인 세션이 최종 확신 결정
 - `update <instruction>` — diff 확인 → 맥락+지시 기반 .vync 수정 + 서버 열기
 
 For these, use the Agent tool with `subagent_type: "vync:vync-translator"`.
@@ -59,25 +59,51 @@ Agent({
 ### Read
 
 1. 파일경로 해결
-2. `vync diff <file>` 실행 (Bash) → 프로그래밍적 diff 결과 획득
-3. 대화 맥락 요약 (2-5문장)
-4. Agent tool 호출:
+2. 대화 맥락 요약 (2-5문장, **유저 원문 발화 포함**)
+   - 유저 발화와 논의 주제를 요약. **도메인 지식이나 기술적 해석은 포함하지 않음.**
+3. Agent tool 호출 (diff 전달 안 함 — translator가 직접 실행):
 
 ```
 Agent({
   description: "Vync read + translate diff",
   subagent_type: "vync:vync-translator",
   mode: "bypassPermissions",
-  prompt: "## 작업: Read\n파일: <absolute_path>\n\n## 대화 맥락\n<현재 논의 상황>\n\n## 유저 피드백 (diff)\n<diff 결과>\n\n## 지시\n위 변경사항을 대화 맥락에 비춰 의미적으로 번역해줘."
+  prompt: "## 작업: Read\n파일: <absolute_path>\n\n## 대화 맥락\n<유저 원문 포함 맥락 요약>"
 })
 ```
 
-5. Sub-agent의 구조화된 반환을 활용:
-   - **확신 높음**: 의도를 대화에 자연스럽게 반영 + 제안 전달
+4. 에러/변경 없음 처리:
+   - `"error:"` prefix → 유저에게 알림 + 경로 재확인. 이후 단계 skip.
+   - `"요약: 변경 없음"` → 유저에게 전달. 이후 단계 skip.
+5. 최종 확신 결정 (메인 세션 책임):
+
+   **Step A — 트리거 분류**:
+   - "뭐가 바뀌었어?" / 구체적 질문 → **명시적 조회**.
+     Step B~E skip. 확신 무관하게 translator 해석을 사실 중심으로 완전 기술.
+   - "바꿔봤어" / "정리했어" / 완료 신호 → **패시브 신호**. Step B~E 진행.
+
+   **Step B — 동기 명확성 평가** (유저 발화 + 대화 맥락):
+   - **높음**: 유저가 변경 이유를 명시적으로 설명
+     (단, 유저 설명이 diff 전체를 커버하지 않으면, 미커버 부분은 중간으로 처리)
+   - **중간**: 방향이나 결과만 언급, 구체적 이유 없음 ("정리했어", "바꿔봤어")
+   - **낮음**: 맥락 없음, 또는 도메인 통념에 반하는 변경
+
+   **Step C — 최종 확신 결합** (translator 해석 확신 × 동기 명확성):
+   - 둘 다 높음 → **최종 높음**
+   - 둘 중 하나라도 낮음 → **최종 낮음**
+   - 그 외 → **최종 중간**
+
+   **Step D — 파괴적 변경 가드** (Step C 후):
+   - translator 요약에 대량 삭제(3+ 노드 removed)가 포함되고 동기 명확성 ≤ 중간:
+     → 최종 확신을 **낮음**으로 클램프
+     → 응답에 "의도한 변경인지" 확인 포함
+
+   **Step E — 최종 확신으로 응답**:
+   - **높음**: 해석을 대화에 자연스럽게 반영 + 제안 전달
      예: "기획의 세부 활동으로 리서치를 보시는 것 같은데, 개발 쪽도 정리할까요?"
-   - **확신 중간**: 추론 언급 + 확인 포함
+   - **중간**: 추론 언급 + 확인 포함
      예: "A-B, C-D로 묶으셨네요. 이 구분으로 진행할까요?"
-   - **확신 낮음**: 요약(사실)만 간략히 언급, 의도 추론은 하지 않음
+   - **낮음**: 요약(사실)만 간략히 언급, 의도 추론은 하지 않음
      예: "구조에 약간 변화가 있네요."
 
 ### Update
