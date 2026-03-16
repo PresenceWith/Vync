@@ -1,7 +1,7 @@
 # Graph View PoC — 검증 계획
 
 **Date**: 2026-03-14
-**Status**: 기획 완료 (실행 전)
+**Status**: 완료 — **Go** (2026-03-16 실행)
 **선행**: `docs/plans/2026-03-14-graph-view-proposal.md`
 **브랜치**: `feat/graph-view-poc` (develop에서 분기)
 
@@ -289,3 +289,38 @@ No-Go 판정 시 정리 절차:
 - **ELK.js WASM vs 순수 JS**: proposal(§3)에서는 ELK.js를 "WASM"으로 기술했으나, PoC에서는 `elkjs/lib/elk.bundled.js` (순수 JS)를 사용하여 WASM 관련 리스크를 분리한다. 10-100 노드 규모에서 순수 JS 성능은 충분. 필요 시 구현 Phase에서 WASM으로 전환.
 - **Shim과 server.ts 관계**: graph 파일에 `elements: []` shim이 포함되므로, 현재 `server.ts:201`의 `Array.isArray(data.elements)` 검증은 shim만으로도 통과한다. 그럼에도 server.ts에 type 분기를 추가하는 이유는: (1) 구현 Phase에서 shim 제거 시 대비, (2) graph 파일의 실제 데이터인 `nodes`/`edges` 존재를 명시적으로 검증.
 - **PostToolUse hook**: shim 포함 graph 파일은 현재 hook의 `Array.isArray(d.elements)` 검사를 통과한다. type 가드를 추가하는 이유는 `elements` 외 graph 전용 필드(nodes, edges)의 구조적 무결성도 확인하기 위함.
+
+---
+
+## Results (2026-03-16)
+
+### PoC-A: React Flow + ELK.js
+
+| Scenario | Result | Notes |
+|----------|--------|-------|
+| A-1 (Install) | **PASS** | Clean install, 12 packages added, 95 tests pass |
+| A-2 (Render) | **PASS** | 4 nodes + 3 edges visible, draggable, no console errors |
+| A-3 (Layout) | **PASS** | Hierarchical/Force toggle produces distinct layouts, deterministic |
+| A-4 (Build) | **PASS** | Production build succeeds |
+| A-5 (CSS) | **PASS** | No React Flow/Plait CSS bleed; toggle between views clean |
+
+### PoC-B: Server Compatibility
+
+| Scenario | Result | Notes |
+|----------|--------|-------|
+| B-1 (Graph PUT) | **PASS** | `{"ok":true}` — type-based validation branch works |
+| B-2 (Canvas PUT) | **PASS** | Existing canvas PUT unaffected |
+| B-3 (Tests) | **PASS** | 95/95 pass, zero regression |
+| B-4 (WS Sync) | **PASS** | file-changed received with nodes/edges arrays, modified label correct |
+| B-5 (Hook) | **PASS** | validate.js OK for both graph and canvas files |
+| B-6 (Diff Guard) | **PASS** | Early return with message, no .lastread created |
+
+### Overall
+
+| PoC | Result |
+|-----|--------|
+| PoC-A (A-1~A-5) | **PASS** |
+| PoC-B (B-1~B-6) | **PASS** |
+| **Overall** | **Go** |
+
+No Conditional Go alternatives needed. All scenarios passed on first attempt.
