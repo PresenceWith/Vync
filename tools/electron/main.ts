@@ -1,6 +1,13 @@
 import { app, BrowserWindow, dialog } from 'electron';
 import path from 'node:path';
 
+// Prevent EPIPE crashes when Sass/Vite writes deprecation warnings to a closed stderr
+process.on('uncaughtException', (err) => {
+  if ((err as NodeJS.ErrnoException).code === 'EPIPE') return;
+  console.error('[vync] Uncaught exception:', err);
+  app.quit();
+});
+
 let mainWindow: BrowserWindow | null = null;
 let serverHandle: { shutdown: () => Promise<void>; url: string } | null = null;
 let pendingFilePath: string | null = null;
@@ -97,6 +104,7 @@ async function openFile(filePath: string): Promise<void> {
         initialFile: resolved,
         port: 3100,
         mode: isDev ? 'development' : 'production',
+        processMode: 'electron',
         staticDir,
       });
     } catch (err: any) {

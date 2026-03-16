@@ -19,6 +19,14 @@ export default defineConfig({
 
   plugins: [react(), nxViteTsPaths()],
 
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['import', 'global-builtin'],
+      },
+    },
+  },
+
   // Uncomment this if you are using workers.
   // worker: {
   //  plugins: [ nxViteTsPaths() ],

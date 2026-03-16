@@ -19,12 +19,14 @@ export async function startServer(
     initialFile?: string;
     port?: number;
     mode?: 'development' | 'production';
+    processMode?: 'daemon' | 'electron' | 'foreground';
     staticDir?: string;
     openBrowser?: boolean;
   } = {}
 ) {
   const port = options.port ?? DEFAULT_PORT;
   const mode = options.mode ?? 'development';
+  const processMode = options.processMode ?? 'daemon';
   const registry = new FileRegistry();
 
   // Register initial file's directory as allowed
@@ -64,6 +66,7 @@ export async function startServer(
     res.json({
       version: 2,
       mode: 'hub',
+      processMode,
       pid: process.pid,
       fileCount: registry.listFiles().length,
     });

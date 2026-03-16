@@ -81,12 +81,12 @@ async function probePort(): Promise<{
     const body = await res.json();
     if (body.version !== 2) return { running: false, info: null };
 
-    // Recover PID file from health response, preserving existing mode if available
+    // Recover PID file from health response, using server-reported processMode
     const existingInfo = await readServerInfo().catch(() => null);
     const recoveredInfo: ServerInfo = {
       version: 2,
       pid: body.pid,
-      mode: existingInfo?.mode ?? 'daemon',
+      mode: body.processMode ?? existingInfo?.mode ?? 'daemon',
       port: PORT,
     };
     await writeServerInfo(recoveredInfo);
@@ -271,7 +271,7 @@ async function runElectron(resolved: string): Promise<void> {
           await writeServerInfo({
             version: 2,
             pid: body.pid,
-            mode: 'daemon',
+            mode: body.processMode ?? 'daemon',
             port: PORT,
           });
         } else {
