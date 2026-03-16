@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { FileBoard } from './file-board';
-import { GraphView } from './graph-view/GraphView';
 import { TabBar } from './tab-bar';
 import { computeLabels } from './tab-utils';
 import type { TabInfo } from './tab-utils';
@@ -33,7 +32,6 @@ export function App() {
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
   const [registeredFiles, setRegisteredFiles] = useState<string[]>([]);
   const [discoveredFiles, setDiscoveredFiles] = useState<string[]>([]);
-  const [showGraph, setShowGraph] = useState(false);
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
 
@@ -105,17 +103,6 @@ export function App() {
     }
   }, [activeFilePath]);
 
-  // Temporary PoC toggle: Ctrl+Shift+G
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'g' && e.ctrlKey && e.shiftKey) {
-        setShowGraph((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
-
   // Labels are recomputed when tabs change via setTabs(computeLabels(...))
   const tabsWithLabels = tabs;
 
@@ -185,11 +172,7 @@ export function App() {
         onDiscoverFile={handleDiscoverFile}
         onDropdownOpen={handleDropdownOpen}
       />
-      {showGraph ? (
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          <GraphView />
-        </div>
-      ) : activeFilePath ? (
+      {activeFilePath ? (
         <div style={{ flex: 1, overflow: 'hidden' }}>
           <FileBoard key={activeFilePath} filePath={activeFilePath} />
         </div>
