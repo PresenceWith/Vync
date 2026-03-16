@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "type": "graph",
+  "viewport": { "x": 0, "y": 0, "zoom": 1 },
+  "elements": [],
+  "nodes": [
+    {
+      "id": "person",
+      "type": "concept",
+      "position": { "x": 100, "y": 200 },
+      "data": { "label": "Person", "category": "class" }
+    },
+    {
+      "id": "employee",
+      "type": "concept",
+      "position": { "x": 300, "y": 200 },
+      "data": { "label": "Employee", "category": "class" }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-isa",
+      "source": "employee",
+      "target": "person",
+      "data": { "label": "is-a", "type": "inheritance" }
+    }
+  ]
+}
