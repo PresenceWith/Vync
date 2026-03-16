@@ -21,6 +21,9 @@
   - Electron 모드에서 `vync open` 시 브라우저 중복 열기 방지 (I-003)
   - probePort() mode 보존 (I-004)
   - 95개 테스트 PASS (신규 2개)
+- External Undo: 외부 변경(Claude Code 등) Cmd+Z 되돌리기 지원 (2026-03-16, develop)
+  - Transforms API 기반 적용으로 Plait history에 기록
+  - ID 기반 diff (remove → set → insert), 동기 flush → 단일 undo batch
 - **develop → main 병합 필요** (develop가 main 대비 20+ 커밋 ahead)
 
 ---
@@ -48,6 +51,7 @@
 | — | Plugin Path Fix | 2026-03-13 | PR #15 | $VYNC_HOME 기반 경로 |
 | — | Asar Unpacked Path Fix | 2026-03-13 | `fcba037` | 정적 파일 경로 수정 |
 | — | Electron/Web Sync Fix | 2026-03-14 | PR #16 | PUT 브로드캐스트, 중복 브라우저 방지 |
+| — | External Undo 지원 | 2026-03-16 | develop | Transforms 기반 외부 변경 적용, Cmd+Z 되돌리기 |
 
 ---
 

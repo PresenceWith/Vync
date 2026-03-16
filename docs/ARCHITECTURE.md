@@ -53,7 +53,9 @@
   → FileRegistry가 해당 파일의 FileWatcher를 통해 chokidar 감지 (300ms 디바운싱)
   → 파일별 SyncService에서 content hash 비교 (에코 방지, → D-009)
   → 실제 변경이면 해당 파일의 WS 클라이언트에만 브로드캐스트
-  → 프론트엔드가 PlaitElement[] 교체
+  → 프론트엔드가 ID 기반 diff 계산 후 Transforms API로 적용
+    (remove → set → insert, 동기 실행 → 하나의 undo batch)
+  → Plait history에 기록 → Cmd+Z로 되돌리기 가능
   → 캔버스 자동 업데이트 (조용히, → D-007)
 ```
 
