@@ -27,6 +27,7 @@
 | D-016 | [Sub-agent 역할 확장: 시각화 전문가](#d-016) | 확정 | 2026-03-11 |
 | D-017 | [의미적 동기화: Semantic Sync](#d-017) | 확정 | 2026-03-13 |
 | D-018 | [파일 유형 정책: 한 파일 = 한 시각화 유형](#d-018) | 확정 | 2026-03-13 |
+| D-019 | [Graph View 아키텍처: React Flow + ELK.js](#d-019) | 확정 | 2026-03-16 |
 
 ---
 
@@ -139,6 +140,8 @@ HTTP + WebSocket + chokidar를 단일 Custom Node Server 프로세스(:3100)에 
 **후속 확장 (P2)**: `version: 2`로 변경 추적 메타데이터(`lastModified`, `lastModifiedBy`) 추가 가능. → [FUTURE.md §4-1](./FUTURE.md) 참조
 
 **재검토 조건**: 포맷 호환성 문제 발생 시 (버전 마이그레이션 필요 등), 또는 세션 간 변경 출처 추적이 필요할 때
+
+> **2026-03-16 확장**: `type: "graph"` 변형 추가. Canvas(`elements[]`) 또는 Graph(`nodes[]`+`edges[]`). Discriminated union으로 구분. `type` 필드 없으면 캔버스(하위 호환).
 
 ---
 
@@ -440,3 +443,29 @@ Level 3: Confirmed Intent   사용자 확인 (필요시에만)
 **영향 범위**: vync-translator (create/update 행동 규칙), diff.ts (파일 레벨 유형 감지 근거)
 
 **재검토 조건**: 사용자가 한 캔버스에서 여러 유형을 동시에 필요로 하는 패턴이 빈번히 발생할 경우
+
+---
+
+### D-019
+
+**Graph View 아키텍처: React Flow v12 + ELK.js**
+
+Graph View는 기존 Plait 캔버스와 독립된 렌더러로 구현. React Flow v12가 노드/엣지 렌더링, ELK.js가 자동 레이아웃 담당.
+
+| 대안 | 기각 사유 |
+|------|----------|
+| Plait 확장 | Plait는 트리/마인드맵 중심, 다대다 관계 그래프에 부적합 |
+| Cytoscape.js | React 통합 미흡, 노드가 React 컴포넌트가 아님 |
+| G6 | 5.x 불안정, React 통합 레이어 미성숙 |
+
+**근거**: React Flow v12는 React 19 호환, 노드가 React 컴포넌트(커스텀 UI 자유도), JSON 구조가 AI 편집에 적합. ELK.js는 계층적(layered) + 힘-기반(stress) 레이아웃 모두 지원. PoC 11/11 PASS 확인.
+
+**아키텍처 결정**:
+- `VyncFile` discriminated union: `VyncCanvasFile | VyncGraphFile`
+- `useGraphSync` hook: GET → WS → debounced PUT (FileBoard 패턴 미러링)
+- Echo prevention: `remoteUpdateUntilRef` guard
+- `graph-mappers.ts`: VyncGraphFile ↔ React Flow 순수 매핑 함수
+
+**영향 범위**: `@vync/shared` types, App.tsx routing, CLI init, server validation, JSON schema
+
+**재검토 조건**: React Flow v12가 React 19를 공식 미지원하게 될 경우

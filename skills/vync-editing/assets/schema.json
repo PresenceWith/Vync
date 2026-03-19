@@ -1,25 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "VyncFile",
-  "description": ".vync canvas file format",
+  "description": ".vync file format (canvas or graph)",
   "type": "object",
-  "required": ["version", "viewport", "elements"],
-  "properties": {
-    "version": {
-      "type": "integer",
-      "const": 1
-    },
-    "viewport": {
-      "$ref": "#/$defs/Viewport"
-    },
-    "elements": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/PlaitElement"
-      }
-    }
-  },
-  "additionalProperties": false,
+  "oneOf": [
+    { "$ref": "#/$defs/CanvasFile" },
+    { "$ref": "#/$defs/GraphFile" }
+  ],
   "$defs": {
     "Viewport": {
       "type": "object",
@@ -44,13 +31,73 @@
         "id": { "type": "string", "minLength": 1 },
         "type": { "type": "string" },
         "children": { "type": "array" },
-        "points": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/Point" }
-        },
+        "points": { "type": "array", "items": { "$ref": "#/$defs/Point" } },
         "groupId": { "type": "string" },
         "angle": { "type": "number" }
       }
+    },
+    "GraphNode": {
+      "type": "object",
+      "required": ["id", "type", "position", "data"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string" },
+        "position": {
+          "type": "object",
+          "required": ["x", "y"],
+          "properties": { "x": { "type": "number" }, "y": { "type": "number" } },
+          "additionalProperties": false
+        },
+        "data": {
+          "type": "object",
+          "required": ["label"],
+          "properties": {
+            "label": { "type": "string", "maxLength": 512 },
+            "category": { "type": "string", "maxLength": 128 },
+            "description": { "type": "string", "maxLength": 4096 },
+            "properties": { "type": "object" }
+          }
+        }
+      }
+    },
+    "GraphEdge": {
+      "type": "object",
+      "required": ["id", "source", "target"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "source": { "type": "string" },
+        "target": { "type": "string" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string", "maxLength": 256 },
+            "type": { "type": "string" }
+          }
+        }
+      }
+    },
+    "CanvasFile": {
+      "type": "object",
+      "required": ["version", "viewport", "elements"],
+      "properties": {
+        "version": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "enum": ["canvas"] },
+        "viewport": { "$ref": "#/$defs/Viewport" },
+        "elements": { "type": "array", "items": { "$ref": "#/$defs/PlaitElement" } }
+      },
+      "additionalProperties": false
+    },
+    "GraphFile": {
+      "type": "object",
+      "required": ["version", "type", "viewport", "nodes", "edges"],
+      "properties": {
+        "version": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "const": "graph" },
+        "viewport": { "$ref": "#/$defs/Viewport" },
+        "nodes": { "type": "array", "items": { "$ref": "#/$defs/GraphNode" }, "maxItems": 2000 },
+        "edges": { "type": "array", "items": { "$ref": "#/$defs/GraphEdge" }, "maxItems": 5000 }
+      },
+      "additionalProperties": false
     }
   }
 }

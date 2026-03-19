@@ -34,7 +34,7 @@
 | F-005 | [파일 메타데이터 v2](#f-005) | 💡 idea | M | D-005 |
 | F-006 | [.vync Document Package](#f-006) | 🔍 evaluating | XL | D-005 |
 | F-007 | [파일 연결 UX](#f-007) | 💡 idea | S~M | D-012 |
-| F-008 | [Graph View / 온톨로지 편집기](#f-008) | 🔍 evaluating | L | — |
+| F-008 | [Graph View / 온톨로지 편집기](#f-008) | ✅ done | L | D-019 |
 | F-009 | [자동 업데이트 + npm 배포](#f-009) | 💡 idea | M | D-012 |
 | F-010 | [파일 간 링크 + 대시보드](#f-010) | 💡 idea | L | D-014 |
 | F-011 | [보안 고도화](#f-011) | 💡 idea | M | — |
@@ -178,10 +178,11 @@
 
 **Graph View / 온톨로지 편집기**
 
-**상태**: 🔍 evaluating · **규모**: L · **관련**: —
+**상태**: ✅ done · **규모**: L · **관련**: D-019
 **의존**: 없음 (기존 캔버스와 독립)
-**설계**: [`plans/2026-03-14-graph-view-proposal.md`](./plans/2026-03-14-graph-view-proposal.md)
-**PoC**: [`plans/2026-03-14-graph-view-poc.md`](./plans/2026-03-14-graph-view-poc.md)
+**설계**: [`archive/2026-03-14-graph-view-proposal.md`](./archive/2026-03-14-graph-view-proposal.md)
+**PoC**: [`archive/2026-03-14-graph-view-poc.md`](./archive/2026-03-14-graph-view-poc.md)
+**구현**: [`plans/2026-03-16-graph-view-implementation.md`](./plans/2026-03-16-graph-view-implementation.md)
 
 **동기**: 마인드맵/플로우차트는 위계적 구조에 강하지만, 개념 간 다대다 관계(온톨로지)를 표현하기 어려움. 지식 그래프 형태의 편집 뷰가 있으면 "생각이 보이는 대화"의 표현 범위가 넓어짐.
 

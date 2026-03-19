@@ -169,6 +169,37 @@ Stage 3: 메인 세션               — Sub-agent prose + 대화 맥락 → 인
 }
 ```
 
+### 4.0a VyncFile Discriminated Union (→ D-019)
+
+`.vync` 파일은 두 가지 유형이 있으며, `type` 필드로 구분하는 discriminated union이다:
+
+```typescript
+type VyncFile = VyncCanvasFile | VyncGraphFile;
+```
+
+- **VyncCanvasFile**: 기존 캔버스 (마인드맵, 플로우차트, 자유 캔버스). `elements: PlaitElement[]`. `type` 필드 없거나 `'canvas'` (하위 호환).
+- **VyncGraphFile**: 지식 그래프 / 온톨로지. `type: 'graph'`, `nodes: GraphNode[]`, `edges: GraphEdge[]`.
+
+```json
+// Graph file example
+{
+  "version": 1,
+  "type": "graph",
+  "viewport": { "zoom": 1, "x": 0, "y": 0 },
+  "nodes": [
+    { "id": "abc12", "type": "concept", "position": { "x": 100, "y": 200 },
+      "data": { "label": "Person", "category": "class" } }
+  ],
+  "edges": [
+    { "id": "e1f2g", "source": "abc12", "target": "h3i4j",
+      "data": { "label": "is-a", "type": "inheritance" } }
+  ]
+}
+```
+
+**라우팅**: App.tsx가 파일의 `type` 필드를 확인하여 `GraphView` (React Flow) 또는 `FileBoard` (Plait)로 분기.
+**동기화**: `useGraphSync` hook이 FileBoard의 sync 패턴을 미러링 (GET → WS → debounced PUT).
+
 ### 4.1 PlaitElement 기본 인터페이스
 
 ```typescript

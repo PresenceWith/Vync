@@ -9,7 +9,7 @@ Run the Vync CLI or delegate to the vync-translator sub-agent.
 ## Subcommands
 
 ### CLI (direct execution)
-- `init <file>` — Create an empty .vync canvas file in CWD/.vync/
+- `init <file> [--type graph]` — Create an empty .vync file in CWD/.vync/ (default: canvas, `--type graph` for graph file)
 - `open <file>` — Register file with hub server and open browser. Starts server if not running.
 - `close [file]` — Unregister file from server. If no files remain, server stops.
   - `--keep-server` — Unregister but keep server running.

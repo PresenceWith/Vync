@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { FileBoard } from './file-board';
+import { GraphView } from './graph-view/GraphView';
 import { TabBar } from './tab-bar';
 import { computeLabels } from './tab-utils';
 import type { TabInfo } from './tab-utils';
+import type { VyncFile } from '@vync/shared';
 
 const initialFile = new URLSearchParams(window.location.search).get('file');
 
@@ -32,6 +34,9 @@ export function App() {
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
   const [registeredFiles, setRegisteredFiles] = useState<string[]>([]);
   const [discoveredFiles, setDiscoveredFiles] = useState<string[]>([]);
+  const [fileTypes, setFileTypes] = useState<
+    Record<string, 'canvas' | 'graph'>
+  >({});
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
 
@@ -102,6 +107,30 @@ export function App() {
       window.history.replaceState(null, '', url.toString());
     }
   }, [activeFilePath]);
+
+  // File type detection
+  useEffect(() => {
+    if (!activeFilePath) return;
+    if (fileTypes[activeFilePath]) return; // already cached
+
+    const detect = async () => {
+      try {
+        const res = await fetch(
+          `/api/sync?file=${encodeURIComponent(activeFilePath)}`
+        );
+        if (res.ok) {
+          const data = (await res.json()) as VyncFile;
+          setFileTypes((prev) => ({
+            ...prev,
+            [activeFilePath]: data.type === 'graph' ? 'graph' : 'canvas',
+          }));
+        }
+      } catch {
+        setFileTypes((prev) => ({ ...prev, [activeFilePath]: 'canvas' }));
+      }
+    };
+    detect();
+  }, [activeFilePath, fileTypes]);
 
   // Labels are recomputed when tabs change via setTabs(computeLabels(...))
   const tabsWithLabels = tabs;
@@ -174,7 +203,11 @@ export function App() {
       />
       {activeFilePath ? (
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <FileBoard key={activeFilePath} filePath={activeFilePath} />
+          {fileTypes[activeFilePath] === 'graph' ? (
+            <GraphView key={activeFilePath} filePath={activeFilePath} />
+          ) : (
+            <FileBoard key={activeFilePath} filePath={activeFilePath} />
+          )}
         </div>
       ) : (
         <NoFileView />

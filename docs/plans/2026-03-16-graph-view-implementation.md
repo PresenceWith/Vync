@@ -8,8 +8,8 @@
 
 **Tech Stack:** React Flow v12 (`@xyflow/react`), ELK.js (`elkjs/lib/elk.bundled.js`), React 19, TypeScript, Vitest
 
-**Spec:** `docs/plans/2026-03-14-graph-view-proposal.md`
-**PoC Results:** `docs/plans/2026-03-14-graph-view-poc.md` (11/11 PASS, Go)
+**Spec:** `docs/archive/2026-03-14-graph-view-proposal.md`
+**PoC Results:** `docs/archive/2026-03-14-graph-view-poc.md` (11/11 PASS, Go)
 **PoC Code:** Already on `develop` — GraphView.tsx skeleton, server.ts type branch, diff.ts guard, hook guard
 
 ---
@@ -17,6 +17,7 @@
 ## Scope
 
 This plan covers the **core graph view** — a working, synced graph editor with CRUD and auto-layout. It does NOT cover:
+
 - Property inspector panel (§5 of proposal — separate plan)
 - diff.ts graph mode (separate plan)
 - vync-translator graph support (separate plan)
@@ -26,6 +27,7 @@ This plan covers the **core graph view** — a working, synced graph editor with
 These are listed in proposal §7 "기능 통합" and will be separate plans.
 
 **Known limitations carried forward:**
+
 - `diff.ts` returns "not yet supported" for graph files (PoC guard)
 - File type cache in App.tsx is not invalidated on external type change (requires page reload)
 
@@ -34,38 +36,41 @@ These are listed in proposal §7 "기능 통합" and will be separate plans.
 ## File Map
 
 ### New files
-| File | Responsibility |
-|------|---------------|
-| `apps/web/src/app/graph-view/graph-mappers.ts` | Pure functions: VyncGraphFile ↔ React Flow Node[]/Edge[] mapping (testable, DRY) |
-| `apps/web/src/app/graph-view/use-graph-sync.ts` | Custom hook: GET/WS/PUT sync for graph files (mirrors FileBoard pattern) |
-| `apps/web/src/app/graph-view/graph-mappers.test.ts` | Unit tests for mapping functions |
-| `tools/server/__tests__/graph-put.test.ts` | Integration test: graph file PUT → GET roundtrip |
+
+| File                                                | Responsibility                                                                   |
+| --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `apps/web/src/app/graph-view/graph-mappers.ts`      | Pure functions: VyncGraphFile ↔ React Flow Node[]/Edge[] mapping (testable, DRY) |
+| `apps/web/src/app/graph-view/use-graph-sync.ts`     | Custom hook: GET/WS/PUT sync for graph files (mirrors FileBoard pattern)         |
+| `apps/web/src/app/graph-view/graph-mappers.test.ts` | Unit tests for mapping functions                                                 |
+| `tools/server/__tests__/graph-put.test.ts`          | Integration test: graph file PUT → GET roundtrip                                 |
 
 ### Modified files
-| File | Change |
-|------|--------|
-| `packages/shared/src/types.ts` | VyncFile → discriminated union, add isGraphFile + isCanvasFile type guards, GraphNode/GraphEdge types |
-| `packages/shared/src/index.ts` | Re-export new types |
-| `packages/shared/src/__tests__/types.test.ts` | Graph type guard tests + malformed input + WsMessage graph shape |
-| `apps/web/src/app/graph-view/GraphView.tsx` | Replace hardcoded data with sync hook, add CRUD (add/delete node/edge) |
-| `apps/web/src/app/graph-view/graph-view.scss` | Add toolbar + CRUD button styles |
-| `apps/web/src/app/app.tsx` | File type detection → route to GraphView or FileBoard |
-| `apps/web/src/app/file-board.tsx` | Adapt to VyncCanvasFile (narrow generic) |
-| `tools/cli/init.ts` | `--type graph` option → creates empty graph file |
-| `tools/cli/main.ts` | Pass `--type` arg to init, update USAGE string |
-| `tools/cli/__tests__/init.test.ts` | Add graph init tests (happy path + edge cases) |
-| `tools/server/server.ts` | Remove PoC shim cast, use proper VyncFile union, add node/edge count limits |
-| `.vync.schema.json` | Add `oneOf` for canvas vs graph |
-| `skills/vync-editing/assets/schema.json` | Add graph file schema |
+
+| File                                          | Change                                                                                                |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `packages/shared/src/types.ts`                | VyncFile → discriminated union, add isGraphFile + isCanvasFile type guards, GraphNode/GraphEdge types |
+| `packages/shared/src/index.ts`                | Re-export new types                                                                                   |
+| `packages/shared/src/__tests__/types.test.ts` | Graph type guard tests + malformed input + WsMessage graph shape                                      |
+| `apps/web/src/app/graph-view/GraphView.tsx`   | Replace hardcoded data with sync hook, add CRUD (add/delete node/edge)                                |
+| `apps/web/src/app/graph-view/graph-view.scss` | Add toolbar + CRUD button styles                                                                      |
+| `apps/web/src/app/app.tsx`                    | File type detection → route to GraphView or FileBoard                                                 |
+| `apps/web/src/app/file-board.tsx`             | Adapt to VyncCanvasFile (narrow generic)                                                              |
+| `tools/cli/init.ts`                           | `--type graph` option → creates empty graph file                                                      |
+| `tools/cli/main.ts`                           | Pass `--type` arg to init, update USAGE string                                                        |
+| `tools/cli/__tests__/init.test.ts`            | Add graph init tests (happy path + edge cases)                                                        |
+| `tools/server/server.ts`                      | Remove PoC shim cast, use proper VyncFile union, add node/edge count limits                           |
+| `.vync.schema.json`                           | Add `oneOf` for canvas vs graph                                                                       |
+| `skills/vync-editing/assets/schema.json`      | Add graph file schema                                                                                 |
 
 ### Documentation updates (post-implementation)
-| File | Change |
-|------|--------|
-| `docs/DECISIONS.md` | Add D-019: Graph View Architecture (React Flow + ELK.js, Plait 독립 렌더러) |
-| `docs/DECISIONS.md` | Update D-005: 파일 포맷에 `type: 'graph'` 변형 추가 |
-| `docs/FUTURE.md` | F-008 상태: `evaluating` → `planned` → `done` |
-| `skills/vync-editing/SKILL.md` | Graph 파일 존재 언급, 캔버스 전용임 명시 |
-| `commands/vync.md` | `init` 설명에 `--type graph` 옵션 추가 |
+
+| File                           | Change                                                                 |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `docs/DECISIONS.md`            | Add D-019: Graph View Architecture (React Flow + ELK.js, Plait 독립 렌더러) |
+| `docs/DECISIONS.md`            | Update D-005: 파일 포맷에 `type: 'graph'` 변형 추가                             |
+| `docs/FUTURE.md`               | F-008 상태: `evaluating` → `planned` → `done`                            |
+| `skills/vync-editing/SKILL.md` | Graph 파일 존재 언급, 캔버스 전용임 명시                                             |
+| `commands/vync.md`             | `init` 설명에 `--type graph` 옵션 추가                                        |
 
 ---
 
@@ -89,8 +94,11 @@ git checkout -b feat/graph-view
 ### Task 1: Define Graph Types in @vync/shared
 
 **Files:**
+
 - Modify: `packages/shared/src/types.ts`
+
 - Modify: `packages/shared/src/index.ts`
+
 - Test: `packages/shared/src/__tests__/types.test.ts`
 
 - [ ] **Step 1: Write tests for the new types**
@@ -306,11 +314,13 @@ npm run build:web 2>&1 | grep -i error | head -20
 Fix each by narrowing. Key files and fixes:
 
 **`apps/web/src/app/file-board.tsx`**: Already only deals with canvas files. Add type narrowing:
+
 - Line 154: `const data = (await res.json()) as VyncCanvasFile<PlaitElement>;`  (was `VyncFile<PlaitElement>`)
 - Line 200: `const fileData = msg.data as VyncCanvasFile<PlaitElement>;` (inside file-changed handler, after checking `'elements' in msg.data`)
 - Line 289: `const vyncFile: VyncCanvasFile<PlaitElement> = {` (in handleChange PUT)
 
 **`tools/cli/init.ts`**: `EMPTY_CANVAS` type annotation:
+
 - `const EMPTY_CANVAS: VyncCanvasFile = {` (was `VyncFile`)
 
 **`tools/server/server.ts`**: Already has type-based branch from PoC. Remove the `as Record<string, unknown>` cast on the graph branch — after narrowing via `data.type === 'graph'`, TypeScript knows it's `VyncGraphFile`.
@@ -334,6 +344,7 @@ if (data.type === 'graph') {
 **`packages/board/src/data/json.ts:43`**: Uses `data.elements` but on its own `VyncExportedData` type (not `VyncFile`). **No change needed.**
 
 **Test files** — these use object literals, not `VyncFile` type annotations, so they compile fine:
+
 - `tools/server/__tests__/put-broadcast.test.ts:59` — **No change needed.**
 - `tools/server/__tests__/sync-drain.test.ts:28` — **No change needed** (runtime access).
 - `tools/server/__tests__/multi-file-e2e.test.ts:54,58` — **No change needed.**
@@ -373,6 +384,7 @@ Route to GraphView or FileBoard based on the file's `type` field, fetched on tab
 ### Task 2: App.tsx File Type Detection + Routing
 
 **Files:**
+
 - Modify: `apps/web/src/app/app.tsx`
 
 The routing strategy: when `activeFilePath` changes, fetch `GET /api/sync?file=<path>` and check `data.type`. Cache the result per file path to avoid re-fetching on tab switch.
@@ -476,6 +488,7 @@ The most critical chunk. GraphView gets real-time sync using the same pipeline a
 ### Task 3: Create Graph Mappers (Pure Functions)
 
 **Files:**
+
 - Create: `apps/web/src/app/graph-view/graph-mappers.ts`
 - Create: `apps/web/src/app/graph-view/graph-mappers.test.ts`
 
@@ -616,17 +629,24 @@ git commit -m "feat(graph): pure mapping functions VyncGraphFile ↔ React Flow"
 ### Task 4: Implement useGraphSync Hook
 
 **Files:**
+
 - Create: `apps/web/src/app/graph-view/use-graph-sync.ts`
 - Modify: `apps/web/src/app/graph-view/GraphView.tsx`
 
 The hook mirrors FileBoard's sync pattern but returns React Flow nodes/edges instead of PlaitElement[].
 
 **Key design decisions (from architecture review):**
+
 - `viewportRef` pattern to prevent stale closure in `buildFile` (C-2)
+
 - `remoteUpdateUntilRef` guard in both `schedulePut` AND `saveNow` (C-3)
+
 - WS handler updates viewport from remote changes (C-2)
+
 - `idCreator(5)` for ID generation, not `Date.now().toString(36)` (C-4)
+
 - `onEdgesChange` triggers sync on remove changes (S-4)
+
 - `onNodesChange`/`onEdgesChange` check echo guard before triggering sync (C-1)
 
 - [ ] **Step 1: Create the sync hook**
@@ -1002,8 +1022,11 @@ git commit -m "feat(graph): real-time sync via useGraphSync hook
 ### Task 5: CLI Graph Init
 
 **Files:**
+
 - Modify: `tools/cli/init.ts`
+
 - Modify: `tools/cli/main.ts`
+
 - Test: `tools/cli/__tests__/init.test.ts`
 
 - [ ] **Step 1: Write tests for graph init**
@@ -1109,6 +1132,7 @@ export async function vyncInit(filePath: string, options?: InitOptions): Promise
 In `tools/cli/main.ts`:
 
 **Update USAGE string** (S-7):
+
 ```
   init <file>    Create .vync file in CWD/.vync/
                  --type graph  Create graph file (default: canvas)
@@ -1154,7 +1178,9 @@ git commit -m "feat(cli): vync init --type graph creates empty graph file"
 ### Task 6: Update JSON Schemas + Plugin Cache
 
 **Files:**
+
 - Modify: `.vync.schema.json`
+
 - Modify: `skills/vync-editing/assets/schema.json`
 
 - [ ] **Step 1: Update root schema**
@@ -1321,6 +1347,7 @@ git commit -m "feat(schema): add graph file schema, remove elements shim from fi
 ### Task 7: Server PUT Integration Test for Graph Files (S-2)
 
 **Files:**
+
 - Create: `tools/server/__tests__/graph-put.test.ts`
 
 - [ ] **Step 1: Write graph PUT integration test**
@@ -1490,11 +1517,17 @@ npx tsx tools/cli/main.ts open test-graph
 ```
 
 Verify in browser:
+
 - [ ] GraphView renders (not FileBoard) — React Flow canvas with controls
+
 - [ ] "+ Node" button adds a new node
+
 - [ ] Hierarchical/Force layout buttons work
+
 - [ ] Drag a node → release → verify position saved (reload page, node stays)
+
 - [ ] Connect two nodes by dragging from handle → edge created and persisted
+
 - [ ] Select a node and press Delete → node removed and persisted
 
 - [ ] **Step 4: Manual E2E — canvas file still works**
@@ -1504,12 +1537,15 @@ npx tsx tools/cli/main.ts open  # opens existing canvas file
 ```
 
 Verify:
+
 - [ ] FileBoard renders (not GraphView)
+
 - [ ] Canvas editing works as before
 
 - [ ] **Step 5: Manual E2E — external edit sync**
 
 With the graph file open in browser:
+
 ```bash
 node -e "
 const fs = require('fs');
@@ -1522,8 +1558,11 @@ fs.writeFileSync(f, JSON.stringify(data, null, 2));
 ```
 
 Verify in browser:
+
 - [ ] New "Company" node appears within ~1 second
+
 - [ ] No console errors
+
 - [ ] No echo loop (node doesn't flicker or duplicate)
 
 - [ ] **Step 6: Cleanup test file**
@@ -1563,11 +1602,13 @@ git commit -m "chore: rebuild Electron bundle with graph file types"
 - [ ] **Step 1: Update DECISIONS.md**
 
 Add D-019:
+
 ```markdown
 | D-019 | Graph View Architecture | React Flow v12 + ELK.js, Plait 독립 렌더러 | Plait 확장, Cytoscape.js, G6 | React Flow는 React 19 호환, 노드가 React 컴포넌트, JSON 구조가 AI 편집에 적합 | React Flow v12가 React 19 미지원 시 | 2026-03-16 |
 ```
 
 Update D-005 note:
+
 ```markdown
 > **2026-03-16 확장**: `type: "graph"` 변형 추가. Canvas(`elements[]`) 또는 Graph(`nodes[]`+`edges[]`). Discriminated union으로 구분.
 ```
@@ -1601,28 +1642,28 @@ git push -u origin feat/graph-view
 
 ## Decision Log
 
-| Decision | Rationale |
-|----------|-----------|
-| useGraphSync as custom hook | Separation of concerns; mirrors FileBoard pattern |
-| `viewportRef` pattern | Prevents stale viewport in `buildFile` closures (Architect C-2) |
-| Echo guard in `saveNow` + handlers | Prevents echo loops from remote position changes (Architect C-1, Security C-3) |
-| `isRemoteUpdate()` exposed from hook | Allows handlers to skip sync during remote update window |
-| `idCreator(5)` for IDs | Vync convention compliance (Domain Expert C-4) |
-| `graph-mappers.ts` pure functions | DRY (3 call sites), testable, eliminates `as any` casts (QA S-1, Security S-6) |
-| Server node/edge count limits | DoS prevention: 2000 nodes, 5000 edges (Security S-5) |
-| `isCanvasFile` type guard | Prevents `switch(f.type)` trap with legacy files (Architect D-5) |
-| File type cache, no invalidation | MVP tradeoff — cache reset requires page reload |
-| Double-fetch on first open | Simplicity over efficiency — optimize later if needed |
-| No useGraphSync unit tests | WebSocket + fetch difficult to mock; covered by E2E. Pure logic extracted to testable `graph-mappers.ts` |
-| D-019 decision record | React Flow + ELK.js, Plait 독립 — fundamental architecture change warrants record |
+| Decision                             | Rationale                                                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| useGraphSync as custom hook          | Separation of concerns; mirrors FileBoard pattern                                                        |
+| `viewportRef` pattern                | Prevents stale viewport in `buildFile` closures (Architect C-2)                                          |
+| Echo guard in `saveNow` + handlers   | Prevents echo loops from remote position changes (Architect C-1, Security C-3)                           |
+| `isRemoteUpdate()` exposed from hook | Allows handlers to skip sync during remote update window                                                 |
+| `idCreator(5)` for IDs               | Vync convention compliance (Domain Expert C-4)                                                           |
+| `graph-mappers.ts` pure functions    | DRY (3 call sites), testable, eliminates `as any` casts (QA S-1, Security S-6)                           |
+| Server node/edge count limits        | DoS prevention: 2000 nodes, 5000 edges (Security S-5)                                                    |
+| `isCanvasFile` type guard            | Prevents `switch(f.type)` trap with legacy files (Architect D-5)                                         |
+| File type cache, no invalidation     | MVP tradeoff — cache reset requires page reload                                                          |
+| Double-fetch on first open           | Simplicity over efficiency — optimize later if needed                                                    |
+| No useGraphSync unit tests           | WebSocket + fetch difficult to mock; covered by E2E. Pure logic extracted to testable `graph-mappers.ts` |
+| D-019 decision record                | React Flow + ELK.js, Plait 독립 — fundamental architecture change warrants record                          |
 
 ## Review Feedback Applied
 
 This plan incorporates feedback from 4 parallel expert reviews:
 
-| Source | Items Applied |
-|--------|-------------|
-| **Architect** | C-1 echo loop fix, C-2 viewport stale closure, S-4 edge sync, D-5 isCanvasFile |
-| **QA/Testing** | S-1 graph-mappers extraction, S-2 server PUT test, S-3 malformed input test |
-| **Domain Expert** | C-4 idCreator, S-7 USAGE string, S-8 plugin cache, D-1~D-4 docs |
-| **Security** | C-3 saveNow echo guard, S-5 node/edge limits, S-6 remove `as any`, schema maxLength |
+| Source            | Items Applied                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| **Architect**     | C-1 echo loop fix, C-2 viewport stale closure, S-4 edge sync, D-5 isCanvasFile      |
+| **QA/Testing**    | S-1 graph-mappers extraction, S-2 server PUT test, S-3 malformed input test         |
+| **Domain Expert** | C-4 idCreator, S-7 USAGE string, S-8 plugin cache, D-1~D-4 docs                     |
+| **Security**      | C-3 saveNow echo guard, S-5 node/edge limits, S-6 remove `as any`, schema maxLength |

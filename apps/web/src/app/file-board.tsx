@@ -8,7 +8,7 @@ import {
   Transforms,
   Viewport,
 } from '@plait/core';
-import type { VyncFile, VyncViewport, WsMessage } from '@vync/shared';
+import type { VyncCanvasFile, VyncViewport, WsMessage } from '@vync/shared';
 import localforage from 'localforage';
 
 function toPlaitViewport(v: VyncViewport): Viewport {
@@ -151,7 +151,7 @@ export function FileBoard({ filePath }: FileBoardProps) {
         }
 
         if (res.ok) {
-          const data = (await res.json()) as VyncFile<PlaitElement>;
+          const data = (await res.json()) as VyncCanvasFile<PlaitElement>;
           setValue({
             children: data.elements || [],
             viewport: toPlaitViewport(data.viewport),
@@ -204,7 +204,7 @@ export function FileBoard({ filePath }: FileBoardProps) {
             'elements' in msg.data
           ) {
             const newElements =
-              (msg.data as VyncFile<PlaitElement>).elements || [];
+              (msg.data as VyncCanvasFile<PlaitElement>).elements || [];
             const board = boardRef.current;
 
             // Early exit: content identical — nothing to apply
@@ -286,7 +286,7 @@ export function FileBoard({ filePath }: FileBoardProps) {
           clearTimeout(debounceTimerRef.current);
         }
         debounceTimerRef.current = setTimeout(() => {
-          const vyncFile: VyncFile<PlaitElement> = {
+          const vyncFile: VyncCanvasFile<PlaitElement> = {
             version: 1,
             viewport: toVyncViewport(newValue.viewport),
             elements: newValue.children || [],

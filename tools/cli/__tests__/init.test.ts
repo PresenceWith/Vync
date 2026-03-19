@@ -73,4 +73,44 @@ describe('vyncInit', () => {
       .catch(() => false);
     expect(exists).toBe(true);
   });
+
+  it('creates a graph file with --type graph', async () => {
+    await fs.mkdir(tmpDir, { recursive: true });
+    process.env.VYNC_CALLER_CWD = tmpDir;
+
+    await vyncInit('ontology', { type: 'graph' });
+
+    const file = path.join(tmpDir, '.vync', 'ontology.vync');
+    const raw = await fs.readFile(file, 'utf-8');
+    const data = JSON.parse(raw);
+    expect(data.type).toBe('graph');
+    expect(data.nodes).toEqual([]);
+    expect(data.edges).toEqual([]);
+    expect(data.elements).toBeUndefined();
+    expect(data.version).toBe(1);
+    expect(data.viewport).toBeDefined();
+  });
+
+  it('graph init throws if file already exists', async () => {
+    await fs.mkdir(path.join(tmpDir, '.vync'), { recursive: true });
+    process.env.VYNC_CALLER_CWD = tmpDir;
+    await fs.writeFile(path.join(tmpDir, '.vync', 'existing.vync'), '{}');
+
+    await expect(vyncInit('existing', { type: 'graph' })).rejects.toThrow(
+      'already exists'
+    );
+  });
+
+  it('defaults to canvas when no type option given', async () => {
+    await fs.mkdir(tmpDir, { recursive: true });
+    process.env.VYNC_CALLER_CWD = tmpDir;
+
+    await vyncInit('plain');
+
+    const file = path.join(tmpDir, '.vync', 'plain.vync');
+    const raw = await fs.readFile(file, 'utf-8');
+    const data = JSON.parse(raw);
+    expect(data.elements).toEqual([]);
+    expect(data.type).toBeUndefined();
+  });
 });

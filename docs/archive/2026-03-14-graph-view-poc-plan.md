@@ -15,22 +15,25 @@
 ## File Map
 
 ### New files (PoC-A)
-| File | Responsibility |
-|------|---------------|
-| `apps/web/src/app/graph-view/GraphView.tsx` | React Flow instance + ELK.js layout toggle, controlled component pattern |
-| `apps/web/src/app/graph-view/graph-view.scss` | GraphView container styles (dimensions, isolation) |
+
+| File                                          | Responsibility                                                           |
+| --------------------------------------------- | ------------------------------------------------------------------------ |
+| `apps/web/src/app/graph-view/GraphView.tsx`   | React Flow instance + ELK.js layout toggle, controlled component pattern |
+| `apps/web/src/app/graph-view/graph-view.scss` | GraphView container styles (dimensions, isolation)                       |
 
 ### Modified files (PoC-B)
-| File | Lines | Change |
-|------|-------|--------|
-| `tools/server/server.ts` | 200-204 | Type-based PUT validation branch |
-| `hooks/hooks.json` | 9 | Type guard in PostToolUse inline validator |
-| `skills/vync-editing/scripts/validate.js` | 84-108 | Type guard: skip PlaitElement validation for graph files |
-| `tools/cli/diff.ts` | 326-327 | Early return guard for graph files |
+
+| File                                      | Lines   | Change                                                   |
+| ----------------------------------------- | ------- | -------------------------------------------------------- |
+| `tools/server/server.ts`                  | 200-204 | Type-based PUT validation branch                         |
+| `hooks/hooks.json`                        | 9       | Type guard in PostToolUse inline validator               |
+| `skills/vync-editing/scripts/validate.js` | 84-108  | Type guard: skip PlaitElement validation for graph files |
+| `tools/cli/diff.ts`                       | 326-327 | Early return guard for graph files                       |
 
 ### Test fixtures (PoC-B)
-| File | Responsibility |
-|------|---------------|
+
+| File                                              | Responsibility                     |
+| ------------------------------------------------- | ---------------------------------- |
 | `tools/server/__tests__/fixtures/graph-test.vync` | Shim-format graph file for testing |
 
 ---
@@ -81,6 +84,7 @@ This is informational only — no action needed.
 ### Task 1: Install Dependencies (Scenario A-1)
 
 **Files:**
+
 - Modify: `package.json` (root)
 
 - [ ] **Step 1: Install packages**
@@ -116,7 +120,9 @@ If all above pass → `A-1: PASS`. Note any warnings for the PoC results documen
 ### Task 2: Create GraphView Component (Scenario A-2)
 
 **Files:**
+
 - Create: `apps/web/src/app/graph-view/GraphView.tsx`
+
 - Create: `apps/web/src/app/graph-view/graph-view.scss`
 
 - [ ] **Step 1: Create directory**
@@ -395,19 +401,14 @@ npm run dev:server
 **Files:** None (manual verification of Task 2 code)
 
 - [ ] **Step 1: Test Hierarchical layout**
-
 1. With GraphView visible in browser, click **"Hierarchical"** button
 2. Observe node repositioning
 3. Verify: nodes arranged in layers (top-to-bottom or left-to-right), no overlapping
-
 - [ ] **Step 2: Test Force layout**
-
 1. Click **"Force"** button
 2. Observe node repositioning — positions should differ from Hierarchical
 3. Verify: at least 2 nodes moved >50px from their Hierarchical positions
-
 - [ ] **Step 3: Toggle back and forth**
-
 1. Click Hierarchical → Force → Hierarchical
 2. Verify: layout is deterministic (Hierarchical always produces same arrangement)
 3. Verify: no console errors during transitions
@@ -437,7 +438,6 @@ ls -la dist/apps/web/assets/*.js | head -5
 Verify the JS bundle exists and is larger than before (React Flow + ELK.js included).
 
 - [ ] **Step 3: CSS conflict check (A-5)**
-
 1. Open `http://localhost:3100` with dev server running
 2. Toggle to GraphView (Ctrl+Shift+G)
 3. Open DevTools → Elements
@@ -469,18 +469,20 @@ git commit -m "poc(graph): React Flow + ELK.js environment integration (PoC-A)
 
 - [ ] **Step 1: Record results**
 
-| Scenario | Result | Notes |
-|----------|--------|-------|
-| A-1 | PASS/FAIL | |
-| A-2 | PASS/FAIL | |
-| A-3 | PASS/FAIL | |
-| A-4 | PASS/FAIL | |
-| A-5 | PASS/FAIL | |
+| Scenario | Result    | Notes |
+| -------- | --------- | ----- |
+| A-1      | PASS/FAIL |       |
+| A-2      | PASS/FAIL |       |
+| A-3      | PASS/FAIL |       |
+| A-4      | PASS/FAIL |       |
+| A-5      | PASS/FAIL |       |
 
 - [ ] **Step 2: Decision**
 
 - **All PASS** → proceed to Chunk 2 (PoC-B)
+
 - **Any FAIL** → check "실패 시 대안" table in spec §4. Apply alternative and re-test, or declare No-Go.
+
 - **STOP HERE if No-Go.** Skip Chunk 2. Go to Rollback (Task 11).
 
 ---
@@ -490,6 +492,7 @@ git commit -m "poc(graph): React Flow + ELK.js environment integration (PoC-A)
 ### Task 6: Server PUT Validation Branch (Scenario B-1, B-2)
 
 **Files:**
+
 - Modify: `tools/server/server.ts:200-204`
 
 - [ ] **Step 1: Modify server validation**
@@ -615,7 +618,9 @@ Expected: `{"ok":true}` (HTTP 200). Canvas PUT still works as before.
 ### Task 7: PostToolUse Hook Type Guard (Scenario B-5)
 
 **Files:**
+
 - Modify: `hooks/hooks.json:9`
+
 - Modify: `skills/vync-editing/scripts/validate.js:84-108`
 
 - [ ] **Step 1: Update inline hook validator**
@@ -625,11 +630,13 @@ In `hooks/hooks.json`, find the inline Node.js script on line 9. The key change:
 Replace the entire `command` value on line 9. The new command adds a graph type guard after parsing:
 
 Find in the inline script:
+
 ```
 if(!Array.isArray(d.elements))e.push('elements must be array');
 ```
 
 Replace with:
+
 ```
 if(d.type==='graph'){if(!Array.isArray(d.nodes))e.push('nodes must be array');if(!Array.isArray(d.edges))e.push('edges must be array')}else{if(!Array.isArray(d.elements))e.push('elements must be array')}
 ```
@@ -713,6 +720,7 @@ Expected: `[vync-validate] .../test-canvas.vync: OK`
 ### Task 8: diff.ts Graph File Guard (Scenario B-6)
 
 **Files:**
+
 - Modify: `tools/cli/diff.ts:326-327`
 
 - [ ] **Step 1: Add graph file guard**
@@ -752,12 +760,14 @@ console.log('snapshotUpdated:', result.snapshotUpdated);
 ```
 
 Expected output:
+
 ```
 [graph-test.vync] Graph files are not yet supported by diff
 snapshotUpdated: false
 ```
 
 Verify: no `.lastread` file created next to `graph-test.vync`:
+
 ```bash
 ls tools/server/__tests__/fixtures/graph-test.vync.lastread 2>/dev/null && echo "FAIL: .lastread created" || echo "PASS: no .lastread"
 ```
@@ -803,6 +813,7 @@ cat tools/server/__tests__/fixtures/graph-test.vync | \
 - [ ] **Step 4: Verify WS message received**
 
 In Terminal 3 (wscat), verify a `file-changed` message was received containing:
+
 - `"type":"file-changed"`
 - `"nodes"` array in the data
 - `"edges"` array in the data
@@ -859,30 +870,32 @@ git commit -m "poc(graph): server compatibility with shim approach (PoC-B)
 ### Task 11: Go/No-Go Decision + Cleanup
 
 **Files:**
+
 - Modify: `docs/plans/2026-03-14-graph-view-poc.md` (record results)
 
 - [ ] **Step 1: Record PoC-B results**
 
-| Scenario | Result | Notes |
-|----------|--------|-------|
-| B-1 | PASS/FAIL | |
-| B-2 | PASS/FAIL | |
-| B-3 | PASS/FAIL | |
-| B-4 | PASS/FAIL | |
-| B-5 | PASS/FAIL | |
-| B-6 | PASS/FAIL | |
+| Scenario | Result    | Notes |
+| -------- | --------- | ----- |
+| B-1      | PASS/FAIL |       |
+| B-2      | PASS/FAIL |       |
+| B-3      | PASS/FAIL |       |
+| B-4      | PASS/FAIL |       |
+| B-5      | PASS/FAIL |       |
+| B-6      | PASS/FAIL |       |
 
 - [ ] **Step 2: Overall Go/No-Go**
 
-| PoC | Result |
-|-----|--------|
-| PoC-A (A-1~A-5) | PASS/FAIL |
-| PoC-B (B-1~B-6) | PASS/FAIL |
-| **Overall** | **Go / Conditional Go / No-Go** |
+| PoC             | Result                          |
+| --------------- | ------------------------------- |
+| PoC-A (A-1~A-5) | PASS/FAIL                       |
+| PoC-B (B-1~B-6) | PASS/FAIL                       |
+| **Overall**     | **Go / Conditional Go / No-Go** |
 
 - [ ] **Step 3: If Go — clean up temporary dev route**
 
 Remove the temporary `Ctrl+Shift+G` toggle from `app.tsx`:
+
 - Remove the `import { GraphView }` (will be re-added in implementation phase with proper routing)
 - Remove the `showGraph` state
 - Remove the keyboard event listener `useEffect`
@@ -906,9 +919,13 @@ Document reason in `docs/plans/2026-03-14-graph-view-poc.md` under a new "## Res
 - [ ] **Step 5: Update PoC spec with results**
 
 Add a `## Results` section to `docs/plans/2026-03-14-graph-view-poc.md` with:
+
 - Each scenario result (PASS/FAIL + notes)
+
 - Overall judgment (Go/Conditional Go/No-Go)
+
 - Any Conditional Go alternatives applied
+
 - Date of execution
 
 - [ ] **Step 6: Push branch (if Go)**

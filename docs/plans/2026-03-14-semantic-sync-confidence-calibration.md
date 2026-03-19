@@ -241,7 +241,7 @@ After:
 | CC.4 | 메인 세션 Read 절차: diff 제거 + 맥락 요약 제약 추가 | `commands/vync.md` |
 | CC.5 | 메인 세션 Read 절차: 트리거 분류 + 에러 처리 + 결합 규칙 + 파괴적 가드 | `commands/vync.md` |
 | CC.6 | 플러그인 캐시 동기화 (`bash .claude-plugin/install.sh`) | — |
-| CC.7 | 회귀 테스트 문서 필드명 갱신 (`확신:`→`해석 확신:`) | `docs/plans/2026-03-14-semantic-sync-regression.md` |
+| CC.7 | 회귀 테스트 문서 필드명 갱신 (`확신:`→`해석 확신:`) | `docs/archive/2026-03-14-semantic-sync-regression.md` |
 
 **코드 변경**: 없음
 **테스트 변경**: 없음 (기존 95개 테스트 영향 없음)

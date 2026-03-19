@@ -10,7 +10,8 @@ import {
   getAllowedDirs,
   validateFilePath,
 } from './security.js';
-import type { VyncFile } from '@vync/shared';
+import type { VyncFile, VyncGraphFile } from '@vync/shared';
+import { isGraphFile } from '@vync/shared';
 
 const DEFAULT_PORT = 3100;
 
@@ -205,13 +206,21 @@ export async function startServer(
         res.status(400).json({ error: 'Invalid VyncFile format' });
         return;
       }
-      if (data.type === 'graph') {
+      if (isGraphFile(data)) {
         // Graph files: validate nodes and edges arrays
-        const gd = data as Record<string, unknown>;
+        const gd = data as VyncGraphFile;
         if (!Array.isArray(gd.nodes) || !Array.isArray(gd.edges)) {
           res
             .status(400)
             .json({ error: 'Graph file requires nodes and edges arrays' });
+          return;
+        }
+        if (gd.nodes.length > 2000 || gd.edges.length > 5000) {
+          res
+            .status(413)
+            .json({
+              error: 'Graph exceeds maximum size (2000 nodes, 5000 edges)',
+            });
           return;
         }
       } else {

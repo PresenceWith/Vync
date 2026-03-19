@@ -6,7 +6,8 @@ import { discoverVyncFiles } from './discover.js';
 const USAGE = `Usage: vync <command> [options]
 
 Commands:
-  init <file>    Create .vync canvas in CWD/.vync/
+  init <file>    Create .vync file in CWD/.vync/
+                 --type graph  Create a graph file (default: canvas)
   open [file|.]  Start server and open browser
                  No args or "." discovers .vync files in CWD
                  --foreground  Run in foreground (blocking)
@@ -17,7 +18,8 @@ Commands:
                  --no-snapshot  Don't update snapshot after diff
 
 Examples:
-  vync init plan        # creates .vync/plan.vync
+  vync init plan                # creates .vync/plan.vync (canvas)
+  vync init ontology --type graph  # creates .vync/ontology.vync (graph)
   vync open plan        # opens .vync/plan.vync
   vync open             # discovers .vync files in CWD
   vync open .           # same as above
@@ -36,12 +38,18 @@ async function main() {
 
   switch (command) {
     case 'init': {
-      const filePath = args[0];
+      const typeIdx = args.indexOf('--type');
+      const fileType = typeIdx >= 0 ? args[typeIdx + 1] : undefined;
+      const filePath = args.find(
+        (a, i) => !a.startsWith('--') && (typeIdx < 0 || i !== typeIdx + 1)
+      );
       if (!filePath) {
-        console.error('Usage: vync init <file>');
+        console.error('Usage: vync init <file> [--type graph]');
         process.exit(1);
       }
-      const created = await vyncInit(filePath);
+      const created = await vyncInit(filePath, {
+        type: fileType === 'graph' ? 'graph' : undefined,
+      });
       console.log(`[vync] Created: ${created}`);
       break;
     }
