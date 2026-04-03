@@ -266,15 +266,17 @@ export function FileBoard({ filePath }: FileBoardProps) {
     };
   }, [syncMode, filePath, fileParam]);
 
-  const handleChange = useCallback(
-    (value: unknown) => {
-      const newValue = value as BoardValue;
-      setValue(newValue);
+  const handleChange = useCallback((value: unknown) => {
+    const newValue = value as BoardValue;
+    setValue(newValue);
 
-      if (newValue.children && newValue.children.length > 0) {
-        setTutorial(false);
-      }
+    if (newValue.children && newValue.children.length > 0) {
+      setTutorial(false);
+    }
+  }, []);
 
+  const handleValueChange = useCallback(
+    (children: PlaitElement[]) => {
       // Skip sync for remote updates (from WebSocket)
       if (Date.now() < remoteUpdateUntilRef.current) {
         return;
@@ -286,10 +288,11 @@ export function FileBoard({ filePath }: FileBoardProps) {
           clearTimeout(debounceTimerRef.current);
         }
         debounceTimerRef.current = setTimeout(() => {
+          const board = boardRef.current;
           const vyncFile: VyncCanvasFile<PlaitElement> = {
             version: 1,
-            viewport: toVyncViewport(newValue.viewport),
-            elements: newValue.children || [],
+            viewport: toVyncViewport(board?.viewport),
+            elements: children || [],
           };
           fetch(`/api/sync?file=${fileParam}`, {
             method: 'PUT',
@@ -301,7 +304,11 @@ export function FileBoard({ filePath }: FileBoardProps) {
         }, SYNC_DEBOUNCE_MS);
       } else {
         // Fallback: save to localforage when not in sync mode
-        localforage.setItem(boardKey, newValue);
+        const board = boardRef.current;
+        localforage.setItem(boardKey, {
+          children,
+          viewport: board?.viewport,
+        } as BoardValue);
       }
     },
     [fileParam, boardKey]
@@ -313,6 +320,7 @@ export function FileBoard({ filePath }: FileBoardProps) {
       viewport={value.viewport}
       theme={value.theme}
       onChange={handleChange}
+      onValueChange={handleValueChange}
       tutorial={tutorial}
       afterInit={(board) => {
         boardRef.current = board;
