@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import type { Server } from 'node:http';
+import type { Server, IncomingMessage } from 'node:http';
 import type { WsMessage } from '@vync/shared';
 import type { FileRegistry } from './file-registry.js';
 
@@ -37,7 +37,7 @@ export function createWsServer(
 
   wss.on(
     'connection',
-    (ws: WebSocket, _request: any, filePath: string | null) => {
+    (ws: WebSocket, _request: IncomingMessage, filePath: string | null) => {
       if (!filePath) {
         // Hub mode: client receives file registration/unregistration events
         registry.addHubClient(ws);

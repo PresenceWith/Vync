@@ -84,7 +84,7 @@ const useBoardEvent = (
     });
     resizeObserver.observe(PlaitBoard.getBoardContainer(board));
     return () => {
-      resizeObserver && (resizeObserver as ResizeObserver).disconnect();
+      resizeObserver.disconnect();
     };
   }, []);
 };

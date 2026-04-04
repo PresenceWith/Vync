@@ -202,10 +202,6 @@ export async function startServer(
     }
     try {
       const data = req.body as VyncFile;
-      if (!data) {
-        res.status(400).json({ error: 'Invalid VyncFile format' });
-        return;
-      }
       if (isGraphFile(data)) {
         // Graph files: validate nodes and edges arrays
         const gd = data as VyncGraphFile;

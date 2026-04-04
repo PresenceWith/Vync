@@ -132,9 +132,6 @@ export function App() {
     detect();
   }, [activeFilePath, fileTypes]);
 
-  // Labels are recomputed when tabs change via setTabs(computeLabels(...))
-  const tabsWithLabels = tabs;
-
   const handleTabClose = useCallback((filePath: string) => {
     setTabs((prev) => {
       const next = prev.filter((t) => t.filePath !== filePath);
@@ -191,7 +188,7 @@ export function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <TabBar
-        tabs={tabsWithLabels}
+        tabs={tabs}
         activeFilePath={activeFilePath}
         registeredFiles={registeredFiles}
         discoveredFiles={discoveredFiles}

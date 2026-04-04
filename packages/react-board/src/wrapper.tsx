@@ -237,7 +237,7 @@ const initializeBoard = (
       )
     )
   );
-  plugins.forEach((plugin: any) => {
+  plugins.forEach((plugin: PlaitPlugin) => {
     board = plugin(board);
   });
 

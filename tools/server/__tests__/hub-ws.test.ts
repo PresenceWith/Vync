@@ -17,11 +17,6 @@ function waitForMessage(ws: WebSocket): Promise<any> {
   });
 }
 
-function createTestFile(dir: string, name: string): string {
-  const filePath = path.join(dir, name);
-  return filePath;
-}
-
 describe('Hub WebSocket', () => {
   let server: http.Server;
   let registry: FileRegistry;
@@ -48,7 +43,7 @@ describe('Hub WebSocket', () => {
   });
 
   it('sends connected with file list on hub connect', async () => {
-    const filePath = createTestFile(tmpDir, 'a.vync');
+    const filePath = path.join(tmpDir, 'a.vync');
     await fs.writeFile(filePath, JSON.stringify({ version: 1, viewport: { zoom: 1, x: 0, y: 0 }, elements: [] }));
     await registry.register(filePath);
 
@@ -68,7 +63,7 @@ describe('Hub WebSocket', () => {
     expect(connMsg.data.files).toEqual([]);
 
     // Register a file — hub client should receive notification
-    const filePath = createTestFile(tmpDir, 'b.vync');
+    const filePath = path.join(tmpDir, 'b.vync');
     await fs.writeFile(filePath, JSON.stringify({ version: 1, viewport: { zoom: 1, x: 0, y: 0 }, elements: [] }));
 
     const regPromise = waitForMessage(ws);
@@ -82,7 +77,7 @@ describe('Hub WebSocket', () => {
   });
 
   it('broadcasts hub-file-unregistered when file unregistered', async () => {
-    const filePath = createTestFile(tmpDir, 'c.vync');
+    const filePath = path.join(tmpDir, 'c.vync');
     await fs.writeFile(filePath, JSON.stringify({ version: 1, viewport: { zoom: 1, x: 0, y: 0 }, elements: [] }));
     await registry.register(filePath);
 
@@ -111,14 +106,14 @@ describe('Hub WebSocket', () => {
     await new Promise((r) => setTimeout(r, 100));
 
     // Registry should still function normally
-    const filePath = createTestFile(tmpDir, 'd.vync');
+    const filePath = path.join(tmpDir, 'd.vync');
     await fs.writeFile(filePath, JSON.stringify({ version: 1, viewport: { zoom: 1, x: 0, y: 0 }, elements: [] }));
     await registry.register(filePath);
     expect(registry.listFiles()).toHaveLength(1);
   });
 
   it('hub WS and file-scoped WS operate independently', async () => {
-    const filePath = createTestFile(tmpDir, 'e.vync');
+    const filePath = path.join(tmpDir, 'e.vync');
     await fs.writeFile(filePath, JSON.stringify({ version: 1, viewport: { zoom: 1, x: 0, y: 0 }, elements: [] }));
     await registry.register(filePath);
 
@@ -137,7 +132,7 @@ describe('Hub WebSocket', () => {
     expect(fileMsg.filePath).toBe(realPath);
 
     // Register another file — only hub client gets notification
-    const filePath2 = createTestFile(tmpDir, 'f.vync');
+    const filePath2 = path.join(tmpDir, 'f.vync');
     await fs.writeFile(filePath2, JSON.stringify({ version: 1, viewport: { zoom: 1, x: 0, y: 0 }, elements: [] }));
 
     const hubRegPromise = waitForMessage(hubWs);

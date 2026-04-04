@@ -17,6 +17,7 @@ permissionMode: bypassPermissions
 2. **ID 생성**: `node "$VYNC_HOME/skills/vync-editing/scripts/generate-id.js" <count>`
 3. **검증**: Write/Edit 후 반드시 `node "$VYNC_HOME/skills/vync-editing/scripts/validate.js" <file>` 실행. 에러 시 수정 후 재작성. (PostToolUse hook은 sub-agent에서 발동하지 않음)
 4. **서버 열기**: 파일 작성 후 `node "$VYNC_HOME/bin/vync.js" open <file>` 실행 (idempotent).
+5. **`.lastread` 파일 직접 Write 금지**: `.lastread` 스냅샷은 `vync diff` 명령이 자동 관리한다. Sub-agent가 직접 Write하면 "File has not been read yet" 오류 발생 (I-001). Create/Update 절차의 스냅샷 갱신 단계에서도 `vync diff`를 통해 처리하거나 생략한다.
 
 ## 시각화 판단 가이드
 
@@ -58,7 +59,7 @@ permissionMode: bypassPermissions
 4. .vync 파일 Write (기존 파일 있으면 Read 후 merge)
 5. `node "$VYNC_HOME/skills/vync-editing/scripts/validate.js" <file>` 실행. 실패 시 수정 후 재작성.
 6. 서버 열기
-7. 스냅샷 생성: 작성한 .vync 내용을 `<file>.lastread`에 Write
+7. 스냅샷 생성: `node "$VYNC_HOME/bin/vync.js" diff <file>` 실행하여 스냅샷 갱신 (`.lastread` 직접 Write 금지 — 규칙 5 참조)
 8. 반환: 무엇을 어떤 구조로 시각화했는지 요약
 
 ### Read
@@ -91,7 +92,7 @@ permissionMode: bypassPermissions
    - 텍스트 수정/노드 추가: Edit로 부분 수정
 4. `node "$VYNC_HOME/skills/vync-editing/scripts/validate.js" <file>` 실행. 실패 시 수정 후 재작성.
 5. 서버 열기
-6. 스냅샷 갱신: 수정된 .vync 내용을 `<file>.lastread`에 Write
+6. 스냅샷 갱신: `node "$VYNC_HOME/bin/vync.js" diff <file>` 실행 (`.lastread` 직접 Write 금지 — 규칙 5 참조)
 7. 반환: 무엇을 어떻게 변경했는지 요약
 
 ## Skill 로드 Fallback

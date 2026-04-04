@@ -36,7 +36,7 @@ export async function readServerInfo(): Promise<ServerInfo | null> {
       return {
         version: 1,
         pid: Number(lines[0]),
-        mode: lines[1] as any,
+        mode: lines[1] as ServerInfo['mode'],
         port: PORT,
       };
     }
@@ -147,9 +147,9 @@ async function registerFile(port: number, filePath: string): Promise<void> {
     body: JSON.stringify({ filePath }),
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
+    const body = await res.json().catch(() => ({})) as { error?: string };
     throw new Error(
-      `[vync] Registration failed: ${(body as any).error || res.statusText}`
+      `[vync] Registration failed: ${body.error || res.statusText}`
     );
   }
 }
@@ -459,8 +459,8 @@ export async function vyncClose(
   if (!opts?.keepServer) {
     try {
       const filesRes = await fetch(`http://localhost:${info.port}/api/files`);
-      const body = await filesRes.json();
-      if ((body as any).files.length === 0) {
+      const body = await filesRes.json() as { files: unknown[] };
+      if (body.files.length === 0) {
         await vyncStop();
       }
     } catch {

@@ -27,8 +27,8 @@ export async function vyncInit(filePath: string, options?: InitOptions): Promise
   try {
     await fs.access(absolute);
     throw new Error(`File already exists: ${absolute}`);
-  } catch (err: any) {
-    if (err.code !== 'ENOENT') throw err;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
   }
 
   await fs.mkdir(path.dirname(absolute), { recursive: true });

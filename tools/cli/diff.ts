@@ -30,16 +30,6 @@ export interface DiffResult {
   snapshotUpdated: boolean;
 }
 
-// --- Layout fields to ignore ---
-
-const LAYOUT_FIELDS = new Set([
-  'points',
-  'width',
-  'height',
-  'manualWidth',
-  'manualHeight',
-]);
-
 // --- Helper: extract text from element ---
 
 function extractText(el: Record<string, unknown>): string {

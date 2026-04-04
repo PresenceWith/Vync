@@ -62,6 +62,7 @@ export function TabBar({
             <span>{tab.label}</span>
             <button
               className="vync-tab__close"
+              aria-label={`Close ${tab.label}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onTabClose(tab.filePath);
@@ -73,7 +74,10 @@ export function TabBar({
         ))}
       </div>
       <div className="vync-tab-add" ref={dropdownRef}>
-        <span
+        <button
+          className="vync-tab-add__btn"
+          aria-label="Open file"
+          aria-expanded={dropdownOpen}
           onClick={() => {
             const willOpen = !dropdownOpen;
             setDropdownOpen(willOpen);
@@ -81,7 +85,7 @@ export function TabBar({
           }}
         >
           +
-        </span>
+        </button>
         {dropdownOpen && (
           <div className="vync-tab-dropdown">
             {unopenedFiles.length > 0 && (
