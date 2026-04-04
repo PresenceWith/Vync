@@ -9,12 +9,14 @@
 
 | ID | 제목 | 심각도 | 상태 | 컴포넌트 | 발견일 |
 |----|------|--------|------|----------|--------|
-| I-001 | [Sub-agent `.lastread` Write 실패](#i-001) | minor | open | vync-translator | 2026-03-14 |
+| I-001 | [Sub-agent `.lastread` Write 실패](#i-001) | minor | resolved | vync-translator | 2026-03-14 |
 | I-002 | [PUT /api/sync가 WebSocket 브로드캐스트 안 함](#i-002) | major | resolved | server | 2026-03-14 |
 | I-003 | [Electron 모드에서 `vync open` 시 브라우저 중복 열림](#i-003) | minor | resolved | CLI (open.ts) | 2026-03-14 |
 | I-004 | [probePort()가 mode를 항상 'daemon'으로 덮어씀](#i-004) | minor | resolved | CLI (open.ts) | 2026-03-14 |
 | I-005 | [Semantic Sync 확신 과대평가 — 단일축 판단 + 무검증 수용](#i-005) | major | open | vync-translator, vync.md | 2026-03-14 |
 | I-006 | [Diff 엔진 시각적 변동 미감지 — 위치/크기 변경 무시](#i-006) | minor | open | diff.ts | 2026-03-14 |
+| I-007 | [React 컴포넌트 테스트 커버리지 부재](#i-007) | minor | open | apps/web, react-board, react-text | 2026-04-04 |
+| I-008 | [file-board.tsx 디버그 console.log 잔존](#i-008) | minor | open | apps/web | 2026-04-04 |
 
 ---
 
@@ -43,27 +45,14 @@
 
 **Sub-agent `.lastread` Write 실패**
 
-심각도: `minor` · 상태: `open` · 발견일: 2026-03-14
+심각도: `minor` · 상태: `resolved` · 발견일: 2026-03-14 · 해결일: 2026-04-04
 컴포넌트: `vync-translator` sub-agent / diff pipeline
 
 **현상**:
 Sub-agent가 `.vync` 파일 수정 후 `.lastread` 스냅샷 파일을 직접 Write하려 할 때, Claude Code의 Write 도구 안전 장치에 의해 차단됨.
 
-```
-Write(/Users/presence/projects/Vync/.vync/roadmap.vync.lastread)
-→ Error: File has not been read yet. Read it first before writing to it.
-```
-
-**근본 원인**:
-1. **직접 원인**: Write 도구는 기존 파일을 덮어쓰려면 먼저 Read해야 하는 안전 장치가 있음. Sub-agent가 `.vync` 파일은 읽었지만 `.lastread` 파일은 읽지 않고 Write 시도.
-2. **구조적 원인**: `.lastread` 스냅샷 갱신은 `vync diff` 명령이 `Snapshot updated`로 자동 처리하는 영역. Sub-agent가 이 역할을 직접 수행하려 한 것 자체가 역할 경계 위반.
-
-**영향**:
-- `.lastread` 스냅샷이 갱신되지 않아, 다음 `vync diff` 실행 시 이미 확인된 변경이 다시 보고될 수 있음
-- `.vync` 파일 자체는 정상 수정됨 — 데이터 손실 없음
-
-**워크어라운드**:
-`vync diff <file>` 한 번 실행하면 스냅샷이 동기화됨.
+**해결**:
+`agents/vync-translator.md`에 `.lastread` 파일 직접 Write 금지 규칙을 추가. Create/Update 절차에서 직접 Write 대신 `vync diff <file>` 호출로 스냅샷을 갱신하도록 수정.
 
 **해결 방향**:
 - `agents/vync-translator.md`에 `.lastread` 파일을 직접 조작하지 말라는 명시적 지침 추가
@@ -220,6 +209,38 @@ Semantic Sync 회귀 테스트(3라운드)에서 translator의 확신 레벨이 
 - `computeDiff()`에 유형별 비교 로직 분기
 - `enrichWithSemanticHints()`의 flowchart/generic 분기 활성화 (현재 `return changes`로 바이패스됨, diff.ts:234)
 - 위치 변경의 semantic hint 설계: 좌표값 자체는 무의미 → "노드 A가 이동됨" 수준의 추상화 필요
-- `LAYOUT_FIELDS` 데드코드 정리
+- ~~`LAYOUT_FIELDS` 데드코드 정리~~ (완료, 2026-04-04)
+
+---
+
+### I-007
+
+**React 컴포넌트 테스트 커버리지 부재**
+
+심각도: `minor` · 상태: `open` · 발견일: 2026-04-04
+컴포넌트: `apps/web/src/app/`, `packages/react-board/`, `packages/react-text/`
+
+**현상**:
+graph-view mappers를 제외하면 React 컴포넌트에 대한 테스트가 전혀 없음. `FileBoard`, `TabBar`, `App`, board hooks 모두 미테스트.
+
+**위험 영역**:
+- `file-board.tsx`의 reconnect-recovery 경로 (404 → re-register → retry)
+- `file-board.tsx`의 `applyExternalChanges` diff 로직
+- `tab-bar.tsx`의 파일 열기/닫기/재열기 플로우
+
+---
+
+### I-008
+
+**file-board.tsx 디버그 console.log 잔존**
+
+심각도: `minor` · 상태: `open` · 발견일: 2026-04-04
+컴포넌트: `apps/web/src/app/file-board.tsx`
+
+**현상**:
+WS connect/disconnect/board-init에 대한 `[vync]` console.log 3건이 프로덕션 경로에 잔존. 노이즈 유발.
+
+**해결 방향**:
+제거 또는 `import.meta.env.DEV` 가드로 개발 환경에서만 출력.
 
 ---

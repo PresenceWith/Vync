@@ -26,11 +26,17 @@
   - ID 기반 diff (remove → set → insert), 동기 flush → 단일 undo batch
 - Graph View PoC (F-008, D-019): 완료 (2026-03-16, feat/graph-view-poc → develop 병합)
   - React Flow v12 + ELK.js 환경 호환 검증 (PoC-A 5/5, PoC-B 6/6 PASS)
-- Graph View 구현: 진행 중 (feat/graph-view 브랜치, develop 미병합)
+- Graph View 구현: 완료 (develop 병합, `9f40893`)
   - VyncFile discriminated union, type-based routing, useGraphSync hook, CLI --type graph
   - 서버 tests 추가 (PUT/GET roundtrip, node limit, canvas coexistence)
   - Electron 번들 리빌드 완료
-- **develop → main 병합 필요** (develop가 main 대비 20+ 커밋 ahead)
+- 프로젝트 통합 리뷰: 완료 (2026-04-04, develop)
+  - 빌드 안정화: ajv@8 추가, tsconfig jsx/esModuleInterop, TS 에러 0건
+  - 3팀(canvas/codex/sync) 병렬 코드 리뷰: 데드코드/타입/a11y 수정
+  - I-001 resolved (translator .lastread 금지), I-006 데드코드 정리
+  - I-007, I-008 신규 등록 (React 테스트 커버리지, console.log)
+  - 114개 테스트 PASS
+- **develop → main 병합 필요** (develop가 main 대비 25+ 커밋 ahead)
 
 ---
 
