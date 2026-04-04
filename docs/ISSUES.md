@@ -16,7 +16,7 @@
 | I-005 | [Semantic Sync 확신 과대평가 — 단일축 판단 + 무검증 수용](#i-005) | major | open | vync-translator, vync.md | 2026-03-14 |
 | I-006 | [Diff 엔진 시각적 변동 미감지 — 위치/크기 변경 무시](#i-006) | minor | open | diff.ts | 2026-03-14 |
 | I-007 | [React 컴포넌트 테스트 커버리지 부재](#i-007) | minor | open | apps/web, react-board, react-text | 2026-04-04 |
-| I-008 | [file-board.tsx 디버그 console.log 잔존](#i-008) | minor | open | apps/web | 2026-04-04 |
+| I-008 | [file-board.tsx 디버그 console.log 잔존](#i-008) | minor | resolved | apps/web | 2026-04-04 |
 
 ---
 
@@ -234,13 +234,10 @@ graph-view mappers를 제외하면 React 컴포넌트에 대한 테스트가 전
 
 **file-board.tsx 디버그 console.log 잔존**
 
-심각도: `minor` · 상태: `open` · 발견일: 2026-04-04
+심각도: `minor` · 상태: `resolved` · 발견일: 2026-04-04 · 해결일: 2026-04-04
 컴포넌트: `apps/web/src/app/file-board.tsx`
 
-**현상**:
-WS connect/disconnect/board-init에 대한 `[vync]` console.log 3건이 프로덕션 경로에 잔존. 노이즈 유발.
-
-**해결 방향**:
-제거 또는 `import.meta.env.DEV` 가드로 개발 환경에서만 출력.
+**해결**:
+3건의 `console.log`에 `import.meta.env.DEV` 가드 추가. 프로덕션 빌드에서 tree-shaken됨.
 
 ---

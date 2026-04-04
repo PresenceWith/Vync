@@ -192,7 +192,7 @@ export function FileBoard({ filePath }: FileBoardProps) {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log(`[vync] WebSocket connected for ${filePath}`);
+        if (import.meta.env.DEV) console.log(`[vync] WebSocket connected for ${filePath}`);
       };
 
       ws.onmessage = (event) => {
@@ -240,7 +240,7 @@ export function FileBoard({ filePath }: FileBoardProps) {
       };
 
       ws.onclose = () => {
-        console.log(
+        if (import.meta.env.DEV) console.log(
           `[vync] WebSocket disconnected for ${filePath}, reconnecting in 3s...`
         );
         reconnectTimerRef.current = setTimeout(connect, 3000);
@@ -324,7 +324,7 @@ export function FileBoard({ filePath }: FileBoardProps) {
       tutorial={tutorial}
       afterInit={(board) => {
         boardRef.current = board;
-        console.log(`[vync] board initialized for ${filePath}`);
+        if (import.meta.env.DEV) console.log(`[vync] board initialized for ${filePath}`);
       }}
     ></VyncBoard>
   );
