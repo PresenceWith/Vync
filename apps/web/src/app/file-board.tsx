@@ -10,6 +10,7 @@ import {
 } from '@plait/core';
 import type { VyncCanvasFile, VyncViewport, WsMessage } from '@vync/shared';
 import localforage from 'localforage';
+import { computeElementDiff } from './board-utils';
 
 function toPlaitViewport(v: VyncViewport): Viewport {
   return { zoom: v.zoom, origination: [v.x, v.y] } as Viewport;
@@ -53,55 +54,31 @@ function applyExternalChanges(
   board: PlaitBoard,
   newChildren: PlaitElement[]
 ): void {
-  const newById = new Map(newChildren.map((el) => [el.id, el]));
-  const newIds = new Set(newChildren.map((el) => el.id));
+  const diff = computeElementDiff(
+    board.children as { id: string; [key: string]: unknown }[],
+    newChildren as { id: string; [key: string]: unknown }[]
+  );
 
   // Phase 1: Remove deleted nodes (back-to-front to preserve indices)
-  for (let i = board.children.length - 1; i >= 0; i--) {
-    if (!newIds.has(board.children[i].id)) {
-      Transforms.removeNode(board, [i]);
-    }
+  for (const idx of diff.removes) {
+    Transforms.removeNode(board, [idx]);
   }
 
   // Phase 2: Update modified nodes via board.apply() directly.
   // Transforms.setNode strips null from newProperties, so property deletions
   // would be silently lost. Using board.apply() preserves null → delete semantics.
-  for (let i = 0; i < board.children.length; i++) {
-    const current = board.children[i];
-    const target = newById.get(current.id);
-    if (!target) continue;
-    const properties: Record<string, unknown> = {};
-    const newProperties: Record<string, unknown> = {};
-    const allKeys = new Set([...Object.keys(current), ...Object.keys(target)]);
-    for (const key of allKeys) {
-      if (key === 'id') continue;
-      const curVal = (current as Record<string, unknown>)[key];
-      const newVal = (target as Record<string, unknown>)[key];
-      if (JSON.stringify(curVal) !== JSON.stringify(newVal)) {
-        if (curVal !== undefined) properties[key] = curVal;
-        newProperties[key] = newVal !== undefined ? newVal : null;
-      }
-    }
-    if (Object.keys(newProperties).length > 0) {
-      board.apply({
-        type: 'set_node',
-        path: [i],
-        properties: properties as Partial<PlaitNode>,
-        newProperties: newProperties as Partial<PlaitNode>,
-      });
-    }
+  for (const set of diff.sets) {
+    board.apply({
+      type: 'set_node',
+      path: [set.index],
+      properties: set.properties as Partial<PlaitNode>,
+      newProperties: set.newProperties as Partial<PlaitNode>,
+    });
   }
 
   // Phase 3: Insert new nodes so final order matches newChildren exactly.
-  // Walk newChildren in order; for each new ID, insert at position i.
-  // board.children grows with each insert, but index i stays correct because
-  // we process newChildren sequentially and all prior positions are settled.
-  const currentIds = new Set(board.children.map((el) => el.id));
-  for (let i = 0; i < newChildren.length; i++) {
-    if (!currentIds.has(newChildren[i].id)) {
-      Transforms.insertNode(board, newChildren[i], [i]);
-      currentIds.add(newChildren[i].id);
-    }
+  for (const ins of diff.inserts) {
+    Transforms.insertNode(board, ins.element as PlaitElement, [ins.index]);
   }
 }
 

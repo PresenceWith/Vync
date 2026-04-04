@@ -35,7 +35,10 @@
   - 3팀(canvas/codex/sync) 병렬 코드 리뷰: 데드코드/타입/a11y 수정
   - I-001, I-008 resolved. I-006 데드코드 정리. I-007 설계 완료 (구현 대기)
   - 114개 테스트 PASS
-- I-007 React 테스트 커버리지: 설계 완료 (spec: `docs/superpowers/specs/2026-04-04-react-test-coverage-design.md`), 구현 대기
+- I-007 React 테스트 커버리지: 구현 완료 (2026-04-04, `feat/i-007-react-tests`)
+  - `computeElementDiff()` 순수 함수 추출 → `board-utils.ts`
+  - 테스트 3파일 26케이스: board-utils(12), tab-utils(6), tab-bar RTL(8)
+  - 140개 테스트 PASS (26 신규)
 
 ---
 
@@ -66,6 +69,7 @@
 | — | Graph View PoC (F-008) | 2026-03-16 | develop | React Flow v12 + ELK.js, 11/11 시나리오 PASS |
 | — | Graph View 구현 (F-008) | 2026-04-04 | develop | VyncFile union, type routing, useGraphSync, 114 tests |
 | — | 프로젝트 통합 리뷰 | 2026-04-04 | develop | 빌드 안정화, 3팀 코드 리뷰, I-001/I-008 resolved |
+| — | I-007 React 테스트 커버리지 | 2026-04-04 | feat/i-007-react-tests | computeElementDiff 추출, 26 테스트 (board-utils/tab-utils/tab-bar) |
 
 ---
 

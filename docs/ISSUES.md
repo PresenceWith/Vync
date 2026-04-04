@@ -15,7 +15,7 @@
 | I-004 | [probePort()가 mode를 항상 'daemon'으로 덮어씀](#i-004) | minor | resolved | CLI (open.ts) | 2026-03-14 |
 | I-005 | [Semantic Sync 확신 과대평가 — 단일축 판단 + 무검증 수용](#i-005) | major | open | vync-translator, vync.md | 2026-03-14 |
 | I-006 | [Diff 엔진 시각적 변동 미감지 — 위치/크기 변경 무시](#i-006) | minor | open | diff.ts | 2026-03-14 |
-| I-007 | [React 컴포넌트 테스트 커버리지 부재](#i-007) | minor | open | apps/web, react-board, react-text | 2026-04-04 |
+| I-007 | [React 컴포넌트 테스트 커버리지 부재](#i-007) | minor | resolved | apps/web, react-board, react-text | 2026-04-04 |
 | I-008 | [file-board.tsx 디버그 console.log 잔존](#i-008) | minor | resolved | apps/web | 2026-04-04 |
 
 ---
@@ -217,16 +217,18 @@ Semantic Sync 회귀 테스트(3라운드)에서 translator의 확신 레벨이 
 
 **React 컴포넌트 테스트 커버리지 부재**
 
-심각도: `minor` · 상태: `open` · 발견일: 2026-04-04
+심각도: `minor` · 상태: `resolved` · 발견일: 2026-04-04 · 해결일: 2026-04-04
 컴포넌트: `apps/web/src/app/`, `packages/react-board/`, `packages/react-text/`
 
 **현상**:
 graph-view mappers를 제외하면 React 컴포넌트에 대한 테스트가 전혀 없음. `FileBoard`, `TabBar`, `App`, board hooks 모두 미테스트.
 
-**위험 영역**:
-- `file-board.tsx`의 reconnect-recovery 경로 (404 → re-register → retry)
-- `file-board.tsx`의 `applyExternalChanges` diff 로직
-- `tab-bar.tsx`의 파일 열기/닫기/재열기 플로우
+**해결**:
+하이브리드 접근법 (순수 함수 추출 + RTL 렌더링 테스트):
+- `computeElementDiff()` → `board-utils.ts`로 추출, 12 유닛 테스트 (remove/set/insert 3단계 각각 검증)
+- `computeLabels()` → 6 유닛 테스트 (중복 basename 분기 등)
+- `TabBar` → 8 RTL 렌더링 테스트 (탭 클릭, 닫기, 드롭다운, 빈 상태)
+- 설계 spec: `docs/superpowers/specs/2026-04-04-react-test-coverage-design.md`
 
 ---
 
