@@ -30,13 +30,12 @@
   - VyncFile discriminated union, type-based routing, useGraphSync hook, CLI --type graph
   - 서버 tests 추가 (PUT/GET roundtrip, node limit, canvas coexistence)
   - Electron 번들 리빌드 완료
-- 프로젝트 통합 리뷰: 완료 (2026-04-04, develop)
+- 프로젝트 통합 리뷰: 완료 (2026-04-04, develop → main 병합 완료)
   - 빌드 안정화: ajv@8 추가, tsconfig jsx/esModuleInterop, TS 에러 0건
   - 3팀(canvas/codex/sync) 병렬 코드 리뷰: 데드코드/타입/a11y 수정
-  - I-001 resolved (translator .lastread 금지), I-006 데드코드 정리
-  - I-007, I-008 신규 등록 (React 테스트 커버리지, console.log)
+  - I-001, I-008 resolved. I-006 데드코드 정리. I-007 설계 완료 (구현 대기)
   - 114개 테스트 PASS
-- **develop → main 병합 필요** (develop가 main 대비 25+ 커밋 ahead)
+- I-007 React 테스트 커버리지: 설계 완료 (spec: `docs/superpowers/specs/2026-04-04-react-test-coverage-design.md`), 구현 대기
 
 ---
 
@@ -65,6 +64,8 @@
 | — | Electron/Web Sync Fix | 2026-03-14 | PR #16 | PUT 브로드캐스트, 중복 브라우저 방지 |
 | — | External Undo 지원 | 2026-03-16 | develop | Transforms 기반 외부 변경 적용, Cmd+Z 되돌리기 |
 | — | Graph View PoC (F-008) | 2026-03-16 | develop | React Flow v12 + ELK.js, 11/11 시나리오 PASS |
+| — | Graph View 구현 (F-008) | 2026-04-04 | develop | VyncFile union, type routing, useGraphSync, 114 tests |
+| — | 프로젝트 통합 리뷰 | 2026-04-04 | develop | 빌드 안정화, 3팀 코드 리뷰, I-001/I-008 resolved |
 
 ---
 

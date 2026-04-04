@@ -19,5 +19,6 @@
 | 2026-03-14-graph-view-poc.md | Graph View PoC 검증 계획 + 결과 | 2026-03-16 | D-019, F-008 |
 | 2026-03-14-graph-view-poc-plan.md | Graph View PoC 구현 계획 | 2026-03-16 | feat/graph-view-poc → develop |
 | 2026-03-14-semantic-sync-regression.md | Semantic Sync 회귀 검증 결과 | 2026-03-14 | I-005, PR #14 |
+| 2026-03-16-graph-view-implementation.md | Graph View 구현 계획 | 2026-04-04 | D-019, F-008 |
 
 > **참고**: 2026-03-07~09 초기 Phase 아카이브 파일은 이전에 삭제됨. completed-phases.md에서 해당 참조에 `[삭제됨]` 표시.

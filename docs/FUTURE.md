@@ -182,7 +182,7 @@
 **의존**: 없음 (기존 캔버스와 독립)
 **설계**: [`archive/2026-03-14-graph-view-proposal.md`](./archive/2026-03-14-graph-view-proposal.md)
 **PoC**: [`archive/2026-03-14-graph-view-poc.md`](./archive/2026-03-14-graph-view-poc.md)
-**구현**: [`plans/2026-03-16-graph-view-implementation.md`](./plans/2026-03-16-graph-view-implementation.md)
+**구현**: [`archive/2026-03-16-graph-view-implementation.md`](./archive/2026-03-16-graph-view-implementation.md)
 
 **동기**: 마인드맵/플로우차트는 위계적 구조에 강하지만, 개념 간 다대다 관계(온톨로지)를 표현하기 어려움. 지식 그래프 형태의 편집 뷰가 있으면 "생각이 보이는 대화"의 표현 범위가 넓어짐.
 
