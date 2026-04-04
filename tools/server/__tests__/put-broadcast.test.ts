@@ -8,7 +8,7 @@ import { addAllowedDir, clearAllowedDirs } from '../security.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import type { VyncFile } from '@vync/shared';
+import type { VyncCanvasFile } from '@vync/shared';
 
 function waitForMessage(ws: WebSocket): Promise<any> {
   return new Promise((resolve) => {
@@ -25,7 +25,7 @@ describe('PUT /api/sync broadcast', () => {
   let port: number;
   let tmpDir: string;
 
-  const vyncData: VyncFile = {
+  const vyncData: VyncCanvasFile = {
     version: 1,
     viewport: { zoom: 1, x: 0, y: 0 },
     elements: [],
@@ -55,9 +55,9 @@ describe('PUT /api/sync broadcast', () => {
         return;
       }
       try {
-        const data = req.body as VyncFile;
+        const data = req.body as VyncCanvasFile;
         if (!data || !Array.isArray(data.elements)) {
-          res.status(400).json({ error: 'Invalid VyncFile format' });
+          res.status(400).json({ error: 'Invalid VyncCanvasFile format' });
           return;
         }
         await sync.writeFile(data);
@@ -110,7 +110,7 @@ describe('PUT /api/sync broadcast', () => {
     const msg2Promise = waitForMessage(ws2);
 
     // PUT new data
-    const updatedData: VyncFile = {
+    const updatedData: VyncCanvasFile = {
       version: 1,
       viewport: { zoom: 1, x: 0, y: 0 },
       elements: [{ id: 'abc12', type: 'mindmap', data: {}, children: [] }] as any,
@@ -159,7 +159,7 @@ describe('PUT /api/sync broadcast', () => {
     await waitForMessage(wsB);
 
     // PUT to file A
-    const updatedData: VyncFile = {
+    const updatedData: VyncCanvasFile = {
       version: 1,
       viewport: { zoom: 1, x: 0, y: 0 },
       elements: [{ id: 'xyz99', type: 'mindmap', data: {}, children: [] }] as any,

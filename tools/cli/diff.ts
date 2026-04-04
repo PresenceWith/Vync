@@ -328,8 +328,10 @@ export async function vyncDiff(
   // Guard: graph files are not yet supported by diff
   if (currentData.type === 'graph') {
     return {
+      filePath: resolved,
       tree: `[${fileName}] Graph files are not yet supported by diff`,
       changes: [],
+      hasChanges: false,
       snapshotUpdated: false,
     };
   }

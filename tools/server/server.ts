@@ -247,7 +247,7 @@ export async function startServer(
   const server = http.createServer(app);
 
   // --- Frontend serving (dev: Vite middleware, prod: static files) ---
-  let vite: { close: () => Promise<void> } | null = null;
+  let vite: { close: () => Promise<void>; middlewares: any } | null = null;
 
   if (mode === 'production' && options.staticDir) {
     app.use(express.static(options.staticDir));

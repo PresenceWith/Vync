@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Node, Edge } from '@xyflow/react';
-import type { VyncGraphFile, VyncViewport } from '@vync/shared';
+import type { VyncGraphFile, VyncViewport, GraphNodeData, GraphEdgeData } from '@vync/shared';
 
 const SYNC_DEBOUNCE_MS = 300;
 
@@ -10,18 +10,18 @@ interface WsMsg {
 }
 
 interface UseGraphSyncResult {
-  nodes: Node[];
-  edges: Edge[];
+  nodes: Node<GraphNodeData>[];
+  edges: Edge<GraphEdgeData>[];
   viewport: VyncViewport;
-  setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
-  setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
+  setNodes: React.Dispatch<React.SetStateAction<Node<GraphNodeData>[]>>;
+  setEdges: React.Dispatch<React.SetStateAction<Edge<GraphEdgeData>[]>>;
   syncEnabled: boolean;
   saveNow: () => void;
   isRemoteUpdate: () => boolean;
 }
 
 // Import dynamically to avoid pulling @vync/shared barrel (node:crypto) into browser
-function mapToReactFlowNodes(vyncNodes: VyncGraphFile['nodes']): Node[] {
+function mapToReactFlowNodes(vyncNodes: VyncGraphFile['nodes']): Node<GraphNodeData>[] {
   return vyncNodes.map((n) => ({
     id: n.id,
     type: n.type || 'default',
@@ -30,7 +30,7 @@ function mapToReactFlowNodes(vyncNodes: VyncGraphFile['nodes']): Node[] {
   }));
 }
 
-function mapToReactFlowEdges(vyncEdges: VyncGraphFile['edges']): Edge[] {
+function mapToReactFlowEdges(vyncEdges: VyncGraphFile['edges']): Edge<GraphEdgeData>[] {
   return vyncEdges.map((e) => ({
     id: e.id,
     source: e.source,
@@ -41,8 +41,8 @@ function mapToReactFlowEdges(vyncEdges: VyncGraphFile['edges']): Edge[] {
 }
 
 export function useGraphSync(filePath: string): UseGraphSyncResult {
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+  const [nodes, setNodes] = useState<Node<GraphNodeData>[]>([]);
+  const [edges, setEdges] = useState<Edge<GraphEdgeData>[]>([]);
   const [viewport, setViewport] = useState<VyncViewport>({ zoom: 1, x: 0, y: 0 });
   const [syncEnabled, setSyncEnabled] = useState(false);
 
@@ -75,13 +75,13 @@ export function useGraphSync(filePath: string): UseGraphSyncResult {
       id: n.id,
       type: n.type || 'concept',
       position: n.position,
-      data: n.data as VyncGraphFile['nodes'][0]['data'],
+      data: n.data,
     })),
     edges: edgesRef.current.map((e) => ({
       id: e.id,
       source: e.source,
       target: e.target,
-      data: (e.data || { label: (e.label as string) || '' }) as VyncGraphFile['edges'][0]['data'],
+      data: e.data || { label: '' },
     })),
   }), []);
 

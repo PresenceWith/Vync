@@ -16,7 +16,7 @@ export interface VyncCanvasFile<T = unknown> {
 
 // --- Graph file ---
 
-export interface GraphNodeData {
+export interface GraphNodeData extends Record<string, unknown> {
   label: string;
   category?: string;
   description?: string;
@@ -30,7 +30,7 @@ export interface GraphNode {
   data: GraphNodeData;
 }
 
-export interface GraphEdgeData {
+export interface GraphEdgeData extends Record<string, unknown> {
   label: string;
   type?: string;
 }

@@ -7,10 +7,13 @@ import {
   type OnNodesChange,
   type OnEdgesChange,
   type OnConnect,
+  type Node,
+  type Edge,
   Background,
   Controls,
   MiniMap,
 } from '@xyflow/react';
+import type { GraphNodeData, GraphEdgeData } from '@vync/shared';
 import '@xyflow/react/dist/style.css';
 import ELK from 'elkjs/lib/elk.bundled';
 import { useGraphSync } from './use-graph-sync';
@@ -37,7 +40,7 @@ export function GraphView({ filePath }: GraphViewProps) {
   // C-1 fix: check echo guard before triggering sync
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
-      setNodes((nds) => applyNodeChanges(changes, nds));
+      setNodes((nds) => applyNodeChanges(changes, nds) as Node<GraphNodeData>[]);
       if (isRemoteUpdate()) return;
       // Position changes (drag end) trigger sync
       if (changes.some((c) => c.type === 'position' && c.dragging === false)) {
@@ -54,7 +57,7 @@ export function GraphView({ filePath }: GraphViewProps) {
   // S-4 fix: edge changes trigger sync too
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
-      setEdges((eds) => applyEdgeChanges(changes, eds));
+      setEdges((eds) => applyEdgeChanges(changes, eds) as Edge<GraphEdgeData>[]);
       if (isRemoteUpdate()) return;
       if (changes.some((c) => c.type === 'remove')) {
         saveNow();
